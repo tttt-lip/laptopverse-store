@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: laptopverse-api
+logging:
+  level:
+    root: INFO
+    com.laptopverse: DEBUG

@@ -4,3 +4,7 @@ server:
 spring:
   application:
     name: laptopverse-api
+  profiles:
+    active: dev
+    application:
+      name: laptopverse-api

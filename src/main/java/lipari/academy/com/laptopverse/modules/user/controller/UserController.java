@@ -68,7 +68,9 @@ public class UserController {
 
         addCookieHeader(httpServletResponse, cookieUtil.createAccessTokenCookie(jwtTokenPair.newAccessToken()), cookieUtil.createRefershTokenCookie(jwtTokenPair.newRefreshToken()));
 
-        return ResponseEntity.ok(new LoginResponse(null, null, null, null, jwtProperties.getTimeExpiredAccessSeconds()));
+        return ResponseEntity.ok(LoginResponse.builder()
+                .accesTokenExpiresIn(jwtProperties.getTimeExpiredAccessMs())
+                .build());
     }
 
     @PostMapping("/logut")

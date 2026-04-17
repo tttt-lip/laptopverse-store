@@ -50,7 +50,7 @@ public class AuthServiceImp implements AuthService {
     @Override
     public JwtTokenPair refreshToken(String oldRefershToken) {
         RefreshToken storedToken = refreshTokenRepository.findByToken(oldRefershToken)
-                .orElseThrow(() -> new RefreshTokenException("RefreshToken not found"));
+                .orElseThrow(() -> new RefreshTokenException("RefreshToken not found with token = " + oldRefershToken));
 
         if (!storedToken.isActive()) {
             throw new RefreshTokenException("Refresh token expired");

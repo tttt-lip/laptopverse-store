@@ -29,9 +29,6 @@ public class UserServiceImp implements UserService {
 
     @Override
     public UserResponseDTO register(UserRequestDTO dto) {
-        if (userRepository.existsBydisplayName(dto.displayName())) {
-            throw DuplicateResourceException.usernameAlreadyInUse(dto.displayName());
-        }
         if (userRepository.existsByEmail(dto.email())) {
             throw DuplicateResourceException.emailAlreadyInUse(dto.email());
         }
@@ -40,6 +37,7 @@ public class UserServiceImp implements UserService {
         String encodedPassword = passwordEncoder.encode(dto.password());
 
         user.setPassword(encodedPassword);
+        user.setEnabled(true);
 
         User saved = userRepository.save(user);
         return userMapper.toResponse(saved);
@@ -56,7 +54,8 @@ public class UserServiceImp implements UserService {
         }
         return LoginResponse.builder()
                 .id(user.getId())
-                .displayName(user.getDisplayName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .accesTokenExpiresIn(jwtProperties.getTimeExpiredAccessSeconds())

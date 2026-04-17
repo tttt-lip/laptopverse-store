@@ -5,7 +5,8 @@ import lipari.academy.com.laptopverse.modules.user.model.UserRole;
 
 public record UserResponseDTO(
         Long id,
-        String username,
+        String firstName,
+        String lastName,
         String email,
         UserRole role
 ) {

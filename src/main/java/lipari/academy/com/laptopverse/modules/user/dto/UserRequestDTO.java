@@ -7,9 +7,11 @@ import jakarta.validation.constraints.Size;
 import lipari.academy.com.laptopverse.modules.user.model.UserRole;
 
 public record UserRequestDTO(
-        @NotBlank(message = "Il display name non può essere vuoto.")
-        @Size(min = 3, max = 50, message = "Il display name deve essere tra 3 e 50 caratteri.")
-        String displayName,
+        @NotBlank(message = "Il nome non può essere vuoto.")
+        String firstName,
+
+        @NotBlank(message = "Il cognome non può essere vuoto.")
+        String lastName,
 
         @NotBlank(message = "La password non può essere vuota.")
         @Size(min = 8, message = "La password deve essere lunga almeno 8 caratteri.")

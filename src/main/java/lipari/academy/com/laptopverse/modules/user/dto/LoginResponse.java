@@ -5,7 +5,8 @@ import lombok.Builder;
 @Builder
 public record LoginResponse(
         Long id,
-        String displayName,
+        String firstName,
+        String lastName,
         String email,
         UserRole role,
         long accesTokenExpiresIn

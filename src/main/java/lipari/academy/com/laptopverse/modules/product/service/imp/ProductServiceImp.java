@@ -58,6 +58,7 @@ public class ProductServiceImp implements ProductService {
     }
 
     @Override
+    @Transactional
     public ProductResponseDTO updateProduct(UUID id, ProductRequestDTO requestDTO) {
 
         Product product = productRepository.findById(id)
@@ -94,6 +95,7 @@ public class ProductServiceImp implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(UUID id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proudct not found with id = " + id));

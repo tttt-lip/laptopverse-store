@@ -16,21 +16,23 @@ public class CookieUtil {
 
     private final JwtProperties jwtProperties;
 
+    private static final String ACCESS_TOKEN_TYPE = "accessToken";
+    private static final String REFRESH_TOKEN_TYPE = "refreshToken";
 
     public ResponseCookie createAccessTokenCookie(String token) {
-        return getResponseCookie("accessToken", token, "/", jwtProperties.getTimeExpiredAccessSeconds());
+        return getResponseCookie(ACCESS_TOKEN_TYPE, token, "/", jwtProperties.getTimeExpiredAccessSeconds());
     }
 
     public ResponseCookie createRefershTokenCookie(String token) {
-        return getResponseCookie("refreshToken", token, "/api/users/refresh", jwtProperties.getTimeExpiredRefreshSeconds());
+        return getResponseCookie(REFRESH_TOKEN_TYPE, token, "/api/users/refresh", jwtProperties.getTimeExpiredRefreshSeconds());
     }
 
     public ResponseCookie deleteAccessTokenCookie() {
-        return getResponseCookie("accessToken", "", "/", 0L);
+        return getResponseCookie(ACCESS_TOKEN_TYPE, "", "/", 0L);
     }
 
     public ResponseCookie deleteRefershTokenCookie() {
-        return getResponseCookie("refreshToken", "", "/api/users/refresh", 0L);
+        return getResponseCookie(REFRESH_TOKEN_TYPE, "", "/api/users/refresh", 0L);
     }
 
     public Optional<String> extractTokenFromCookie(HttpServletRequest request, String cookieName) {

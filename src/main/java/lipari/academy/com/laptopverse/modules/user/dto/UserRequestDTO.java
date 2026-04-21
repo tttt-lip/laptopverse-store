@@ -5,7 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lipari.academy.com.laptopverse.modules.user.model.UserRole;
+import lombok.Builder;
 
+@Builder
 public record UserRequestDTO(
         @NotBlank(message = "Il nome non può essere vuoto.")
         String firstName,

@@ -5,12 +5,14 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lipari.academy.com.laptopverse.config.JwtProperties;
+import lipari.academy.com.laptopverse.modules.user.model.User;
 import lipari.academy.com.laptopverse.modules.user.model.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 import java.util.function.Function;
@@ -18,6 +20,9 @@ import java.util.function.Function;
 @Service
 @RequiredArgsConstructor
 public class JwtService {
+    private static final String ACCESS_TOKEN_TYPE = "accessToken";
+    private static final String REFRESH_TOKEN_TYPE = "refreshToken";
+
     private final JwtProperties jwtProperties;
 
     private Key getSigningKey() {
@@ -25,22 +30,23 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateAccessToken(String email, UserRole role) {
-        return generateToken(email, role, "accessToken", jwtProperties.getTimeExpiredAccessMs());
+    public String generateAccessToken(User user) {
+        return generateToken(user, ACCESS_TOKEN_TYPE, jwtProperties.getTimeExpiredAccessMs());
     }
 
-    public String generateRefreshToken(String email) {
-        return generateToken(email, null, "refreshToken", jwtProperties.getTimeExpiredRefreshMs());
+    public String generateRefreshToken(User user) {
+        return generateToken(user, REFRESH_TOKEN_TYPE, jwtProperties.getTimeExpiredRefreshMs());
     }
 
-    private String generateToken(String email, UserRole role, String type, Long time_expiration) {
+    private String generateToken(User user, String type, Long time_expiration) {
         var builder = Jwts.builder()
-                .setSubject(email)
+                .setSubject(user.getEmail())
                 .claim("type", type)
+                .claim("userId", user.getId().toString())
                 .claim("jti", UUID.randomUUID().toString());
 
-        if (role != null) {
-            builder.claim("role", role.name());
+        if (user.getRole() != null) {
+            builder.claim("role", user.getRole().name());
         }
 
         return builder
@@ -48,15 +54,6 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + time_expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
-    }
-
-
-    public String refreshToken(String oldToken) {
-        final String email = extractEmail(oldToken);
-        if (email == null) {
-            throw new IllegalArgumentException("Refresh token non valido");
-        }
-        return generateRefreshToken(email);
     }
 
     public String extractEmail(String token) {
@@ -67,6 +64,10 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
+    public String extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", String.class));
+    }
+
     public String extractTokenType(String token) {
         return extractClaim(token, claims -> claims.get("type", String.class));
     }
@@ -74,13 +75,13 @@ public class JwtService {
     public boolean isTokenValid(String token, String email) {
         final String extractedEmail = extractEmail(token);
         final String type = extractTokenType(token);
-        return (extractedEmail.equals(email) && !isTokenExpired(token) && "access".equals(type));
+        return (extractedEmail.equals(email) && !isTokenExpired(token) && ACCESS_TOKEN_TYPE.equals(type));
     }
 
     public boolean isRefreshTokenValid(String token, String email) {
         final String extractedEmail = extractEmail(token);
         final String type = extractTokenType(token);
-        return (extractedEmail.equals(email) && !isTokenExpired(token) && "refreshToken".equals(type));
+        return (extractedEmail.equals(email) && !isTokenExpired(token) && REFRESH_TOKEN_TYPE.equals(type));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -93,6 +94,7 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
+        Instant expiration = extractClaim(token, Claims::getExpiration).toInstant();
+        return expiration.isBefore(Instant.now());
     }
 }

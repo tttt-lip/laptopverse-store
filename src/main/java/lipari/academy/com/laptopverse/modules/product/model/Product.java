@@ -3,6 +3,7 @@ package lipari.academy.com.laptopverse.modules.product.model;
 import jakarta.persistence.*;
 import lipari.academy.com.laptopverse.modules.category.model.Category;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Product {
 
     @Id

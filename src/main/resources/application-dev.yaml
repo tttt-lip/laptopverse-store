@@ -36,4 +36,4 @@ jwt:
 logging:
   level:
     root: INFO
-    com.laptopverse: DEBUG
+    lipari.academy.com.laptopverse: DEBUG

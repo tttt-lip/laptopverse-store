@@ -96,7 +96,7 @@ public class ProductServiceImp implements ProductService {
 
     @Override
     @Transactional
-    public void deleteProduct(UUID id) {
+    public void softDeleteProduct(UUID id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Proudct not found with id = " + id));
 

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -23,12 +24,14 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> create(@Valid @RequestBody ProductRequestDTO requestDTO) {
         ProductResponseDTO data = productService.createProduct(requestDTO);
         return new ResponseEntity<>(ApiResponse.success(data, "Product created"), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> update(@PathVariable UUID id, @Valid @RequestBody ProductRequestDTO requestDTO) {
         ProductResponseDTO data = productService.updateProduct(id, requestDTO);
         return ResponseEntity.ok(ApiResponse.success(data, "Product update"));
@@ -36,8 +39,9 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable UUID id) {
-        productService.deleteProduct(id);
+        productService.softDeleteProduct(id);
     }
 
     @GetMapping("/{slug}")

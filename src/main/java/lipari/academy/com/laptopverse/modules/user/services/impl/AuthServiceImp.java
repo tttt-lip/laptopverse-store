@@ -32,8 +32,8 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     public JwtTokenPair generateTokens(User user) {
-        String accessToken = jwtService.generateAccessToken(user.getEmail(), user.getRole());
-        String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .token(refreshToken)
@@ -64,8 +64,8 @@ public class AuthServiceImp implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String newAccessToken = jwtService.generateAccessToken(user.getEmail(), user.getRole());
-        String newRefreshToken = jwtService.generateRefreshToken(user.getEmail());
+        String newAccessToken = jwtService.generateAccessToken(user);
+        String newRefreshToken = jwtService.generateRefreshToken(user);
 
         RefreshToken newRefreshTokenEntity = RefreshToken.builder()
                 .token(newRefreshToken)

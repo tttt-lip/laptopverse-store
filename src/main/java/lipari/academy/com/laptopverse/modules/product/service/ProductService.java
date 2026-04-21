@@ -2,7 +2,6 @@ package lipari.academy.com.laptopverse.modules.product.service;
 
 import lipari.academy.com.laptopverse.modules.product.dto.ProductRequestDTO;
 import lipari.academy.com.laptopverse.modules.product.dto.ProductResponseDTO;
-import lipari.academy.com.laptopverse.modules.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,7 +14,7 @@ public interface ProductService {
     ProductResponseDTO updateProduct(UUID id, ProductRequestDTO requestDTO);
 
     // Soft Delete: isActive = false
-    void deleteProduct(UUID id);
+    void softDeleteProduct(UUID id);
 
     Page<ProductResponseDTO> getActiveProducts(Pageable pageable);
 

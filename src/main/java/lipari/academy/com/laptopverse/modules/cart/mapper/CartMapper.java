@@ -14,7 +14,8 @@ public interface CartMapper {
     @Mapping(target = "productName", source = "product.name")
     CartItemDTO toItemDTO(CartItem cartItem);
 
-    @Mapping(target = "priceTotal", ignore = true)
+    @Mapping(target = "totalPrice", ignore = true)
+    @Mapping(target = "totalQuantity", ignore = true)
     @Mapping(target = "user", ignore = true)
     CartResponseDTO toCartDTO(Cart cart);
 

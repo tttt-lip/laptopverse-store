@@ -9,7 +9,7 @@ import java.util.UUID;
 public record CartResponseDTO(
         UUID id,
         List<CartItemDTO> items,
-        BigDecimal priceTotal,
-        Integer quantityTotal, UserResponseDTO user
+        BigDecimal totalPrice,
+        Integer totalQuantity, UserResponseDTO user
 ) {
 }

@@ -1,0 +1,12 @@
+package lipari.academy.com.laptopverse.modules.cart.dto;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
+public record CartItemDTO(
+        UUID productId,
+        String productName,
+        Integer quantity,
+        BigDecimal priceSnapshot
+) {
+}

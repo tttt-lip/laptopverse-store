@@ -51,17 +51,20 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductResponseDTO>> getAll(@PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(productService.getActiveProducts(pageable));
+    public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> getAll(@PageableDefault(size = 10) Pageable pageable) {
+        Page<ProductResponseDTO> data = productService.getActiveProducts(pageable);
+        return ResponseEntity.ok(ApiResponse.success(data, "Products list"));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<ProductResponseDTO>> search(@RequestParam String keyword, Pageable pageable) {
-        return ResponseEntity.ok(productService.searchProducts(keyword, pageable));
+    public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> search(@RequestParam String keyword, Pageable pageable) {
+        Page<ProductResponseDTO> data = productService.searchProducts(keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success(data, "Search keyword: " + keyword));
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<Page<ProductResponseDTO>> getByCategory(@PathVariable UUID categoryId, Pageable pageable) {
-        return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
+    public ResponseEntity<ApiResponse<Page<ProductResponseDTO>>> getByCategory(@PathVariable UUID categoryId, Pageable pageable) {
+        Page<ProductResponseDTO> data = productService.getProductsByCategory(categoryId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(data, "Products for category"));
     }
 }

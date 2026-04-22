@@ -8,7 +8,7 @@ import lipari.academy.com.laptopverse.modules.cart.mapper.CartMapper;
 import lipari.academy.com.laptopverse.modules.cart.model.Cart;
 import lipari.academy.com.laptopverse.modules.cart.repository.CartRepository;
 import lipari.academy.com.laptopverse.modules.cart.service.CartService;
-import lipari.academy.com.laptopverse.modules.product.model.CartItem;
+import lipari.academy.com.laptopverse.modules.cart.model.CartItem;
 import lipari.academy.com.laptopverse.modules.product.model.Product;
 import lipari.academy.com.laptopverse.modules.product.repository.ProductRepository;
 import lipari.academy.com.laptopverse.modules.user.mapper.UserMapper;

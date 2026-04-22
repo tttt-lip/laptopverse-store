@@ -1,7 +1,7 @@
-package lipari.academy.com.laptopverse.modules.product.model;
+package lipari.academy.com.laptopverse.modules.cart.model;
 
 import jakarta.persistence.*;
-import lipari.academy.com.laptopverse.modules.cart.model.Cart;
+import lipari.academy.com.laptopverse.modules.product.model.Product;
 import lombok.*;
 import java.math.BigDecimal;
 import java.util.UUID;

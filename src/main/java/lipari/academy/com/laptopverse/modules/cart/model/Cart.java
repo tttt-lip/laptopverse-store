@@ -1,7 +1,6 @@
 package lipari.academy.com.laptopverse.modules.cart.model;
 
 import jakarta.persistence.*;
-import lipari.academy.com.laptopverse.modules.product.model.CartItem;
 import lipari.academy.com.laptopverse.modules.user.model.User;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -23,14 +22,15 @@ public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    @Column(unique = true)
-    private String guestSessionId;
+    // @Column(unique = true)
+   // private String guestSessionId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<CartItem> items = new ArrayList<>();
 
     public void addItem(CartItem item) {

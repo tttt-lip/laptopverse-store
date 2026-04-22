@@ -1,5 +1,10 @@
 package lipari.academy.com.laptopverse.modules.user.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,27 +14,21 @@ import lipari.academy.com.laptopverse.config.CookieUtil;
 import lipari.academy.com.laptopverse.config.JwtProperties;
 import lipari.academy.com.laptopverse.modules.auth.dto.LogoutResponse;
 import lipari.academy.com.laptopverse.modules.auth.model.JwtTokenPair;
-import lipari.academy.com.laptopverse.modules.user.dto.LoginRequest;
-import lipari.academy.com.laptopverse.modules.user.dto.LoginResponse;
-import lipari.academy.com.laptopverse.modules.user.dto.UserRequestDTO;
-import lipari.academy.com.laptopverse.modules.user.dto.UserResponseDTO;
+import lipari.academy.com.laptopverse.modules.user.dto.*;
 import lipari.academy.com.laptopverse.modules.user.model.User;
-import lipari.academy.com.laptopverse.modules.user.model.UserRole;
 import lipari.academy.com.laptopverse.modules.user.services.AuthService;
 import lipari.academy.com.laptopverse.modules.user.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -44,11 +43,24 @@ public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> register(@Valid @RequestBody UserRequestDTO dto, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<ApiResponse<UserResponseDTO>> register(@Valid @RequestBody UserRequestDTO dto,
+                                                                 @AuthenticationPrincipal User currentUser
+
+    ) {
         UserResponseDTO response = userService.register(dto, currentUser);
         return ResponseEntity.status(201).body(ApiResponse.success(response, "Created User"));
     }
-
+    @Operation(summary = "Login user and set secure cookies")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Login successful",
+                    headers = {
+                            @Header(name = "Set-Cookie", description = "Contiene accessToken e refreshToken", schema = @Schema(type = "string"))
+                    }
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse httpServletResponse) {
         LoginResponse loginResponse = userService.login(loginRequest);
@@ -101,6 +113,21 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
         List<UserResponseDTO> users = userService.getAllUser();
         return ResponseEntity.ok(ApiResponse.success(users, "All users found"));
+    }
+
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> softDeleteById(@PathVariable UUID userId) {
+        userService.softDeleteById(userId);
+        return ResponseEntity.ok(ApiResponse.success(null, "User soft deleted"));
+    }
+
+    @PutMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateById(@PathVariable UUID userId,
+                                                                   @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+        UserResponseDTO userResponseDTO = userService.updateUserById(userId, userUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(userResponseDTO, "User updated"));
     }
 
     private static void addCookieHeader(HttpServletResponse httpServletResponse, ResponseCookie cookieAccess, ResponseCookie cookieRefresh) {

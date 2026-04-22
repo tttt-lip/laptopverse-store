@@ -9,6 +9,7 @@ import lipari.academy.com.laptopverse.modules.user.model.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface UserService {
     UserResponseDTO register(UserRequestDTO dto, UserDetails currentUser);
@@ -18,4 +19,10 @@ public interface UserService {
     User findUserByEmail(String email);
 
     List<UserResponseDTO> getAllUser();
+
+
+    void softDeleteById(UUID id);
+
+    UserResponseDTO updateUserById(UUID userId, lipari.academy.com.laptopverse.modules.user.dto.UserUpdateDTO userUpdateDTO);
+
 }

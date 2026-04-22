@@ -41,7 +41,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String userEmail = jwtService.extractEmail(jwtToken);
-        log.debug("FILTER SUCCESS {} {}", userEmail, jwtToken);
 
         try {
 

@@ -24,7 +24,7 @@ public class CookieUtil {
     }
 
     public ResponseCookie createRefershTokenCookie(String token) {
-        return getResponseCookie(REFRESH_TOKEN_TYPE, token, "/api/users/refresh", jwtProperties.getTimeExpiredRefreshSeconds());
+        return getResponseCookie(REFRESH_TOKEN_TYPE, token, "/api/v1/users/refresh", jwtProperties.getTimeExpiredRefreshSeconds());
     }
 
     public ResponseCookie deleteAccessTokenCookie() {
@@ -32,7 +32,7 @@ public class CookieUtil {
     }
 
     public ResponseCookie deleteRefershTokenCookie() {
-        return getResponseCookie(REFRESH_TOKEN_TYPE, "", "/api/users/refresh", 0L);
+        return getResponseCookie(REFRESH_TOKEN_TYPE, "", "/api/v1/users/refresh", 0L);
     }
 
     public Optional<String> extractTokenFromCookie(HttpServletRequest request, String cookieName) {

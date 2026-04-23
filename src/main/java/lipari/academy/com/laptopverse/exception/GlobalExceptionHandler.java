@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
@@ -83,6 +85,60 @@ public class GlobalExceptionHandler {
         log.warn("Access denied: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error("Accesso negato: non hai i permessi necessari per questa operazione."));
+    }
+
+    @ExceptionHandler(io.jsonwebtoken.ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<String>> handleExpiredJwtException(io.jsonwebtoken.ExpiredJwtException ex) {
+        log.error("JWT scaduto: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Il token di sessione è scaduto. Effettua nuovamente il login o usa il refresh token."));
+    }
+
+    @ExceptionHandler({
+            io.jsonwebtoken.MalformedJwtException.class,
+            io.jsonwebtoken.security.SignatureException.class,
+            io.jsonwebtoken.UnsupportedJwtException.class
+    })
+    public ResponseEntity<ApiResponse<String>> handleJwtSecurityException(Exception ex) {
+        log.error("Errore di sicurezza JWT: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("Token non valido o manomesso. Accesso negato."));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleNoResourceFoundException(NoResourceFoundException ex) {
+        log.warn("Risorsa non trovata: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("L'endpoint richiesto non esiste: " + ex.getResourcePath()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<String>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.error("Violazione integrità dati: {}", ex.getMessage());
+
+        String message = "Impossibile completare l'operazione a causa di vincoli sui dati. ";
+        if (ex.getMessage().contains("FOREIGN KEY")) {
+            message += "Assicurati che l'elemento non sia collegato ad altri record (es. prodotti in una categoria).";
+        }
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(message));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<String>> handleHttpRequestMethodNotSupportedException(
+            org.springframework.web.HttpRequestMethodNotSupportedException ex) {
+
+        String supportedMethods = ex.getSupportedHttpMethods() != null
+                ? ex.getSupportedHttpMethods().toString()
+                : "nessuno";
+
+        String message = String.format("Metodo HTTP '%s' non supportato per questo endpoint. I metodi supportati sono: %s",
+                ex.getMethod(), supportedMethods);
+
+        log.warn("Tentativo di accesso con metodo errato: {}", message);
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error(message));
     }
 
     @ExceptionHandler(Exception.class)

@@ -8,6 +8,8 @@ import lipari.academy.com.laptopverse.modules.user.services.impl.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -40,26 +42,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String userEmail = jwtService.extractEmail(jwtToken);
-
         try {
-
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                if (jwtService.isTokenValid(jwtToken, userEmail)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-
-
-                }
+            final String userEmail = jwtService.extractEmail(jwtToken);
+            if (userEmail == null) {
+                throw new BadCredentialsException("Token non valido");
             }
-        } catch (Exception e) {
-            log.error("Errore durante l'impostazione dell'autenticazione: {}", e.getMessage());
-        }
 
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            if (!jwtService.isTokenValid(jwtToken, userEmail)) {
+                throw new BadCredentialsException("Token non valido");
+            }
+
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        } catch (Exception e) {
+            log.warn("JWT scaduto o non valido per {}. Cancello il cookie e procedo come ospite.", request.getRequestURI());
+
+            response.addHeader("Set-Cookie", cookieUtil.deleteAccessTokenCookie().toString());
+            SecurityContextHolder.clearContext();
+        }
 
         filterChain.doFilter(request, response);
     }

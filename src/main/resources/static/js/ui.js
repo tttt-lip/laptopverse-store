@@ -32,23 +32,26 @@ const UI = {
     },
 
     renderProductDetail(p) {
+        // Debug: log del prodotto ricevuto
+        console.log('[UI] renderProductDetail - product:', p);
+        
         const container = document.getElementById('product-detail-content');
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
                 <div class="bg-white rounded-[2.5rem] aspect-square flex items-center justify-center text-slate-100 border border-slate-100 shadow-sm overflow-hidden relative">
                     <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     <div class="absolute top-6 right-6 ${p.stockQuantity < 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} text-xs font-bold px-4 py-1.5 rounded-xl border border-current opacity-90">
-                        Disponibilità: ${p.stockQuantity} pezzi
+                        Disponibilità: ${p.stockQuantity || 0} pezzi
                     </div>
                 </div>
                 <div class="flex flex-col justify-center">
                     <div class="text-indigo-600 font-bold uppercase tracking-widest text-xs mb-4">${p.categoryName || 'Senza categoria'}</div>
-                    <h2 class="text-5xl font-bold tracking-tight mb-6 text-slate-900">${p.name}</h2>
+                    <h2 class="text-5xl font-bold tracking-tight mb-6 text-slate-900">${p.name || 'Prodotto'}</h2>
                     <p class="text-slate-500 text-base leading-relaxed mb-10">${p.specs || 'Nessuna specifica'}</p>
                     <div class="flex items-center gap-10 mb-10 bg-white p-6 rounded-3xl border border-slate-100">
                         <div>
                             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Prezzo</div>
-                            <div class="text-3xl font-bold text-slate-900">${(p.price || 0).toFixed(2)}€</div>
+                            <div class="text-3xl font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</div>
                         </div>
                         <div class="h-10 w-px bg-slate-100"></div>
                         <div>
@@ -73,6 +76,9 @@ const UI = {
         const summary = document.getElementById('cart-summary');
         const countBadge = document.getElementById('cart-count');
         
+        // Debug: log del carrello ricevuto
+        console.log('[UI] renderCart - cart:', cart);
+        
         if (countBadge) countBadge.innerText = cart ? (cart.totalQuantity || 0) : '0';
         
         if (!cart || !cart.items || cart.items.length === 0) {
@@ -87,7 +93,7 @@ const UI = {
                     <div class="flex items-center gap-6">
                         <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-indigo-400 font-bold text-[10px] border border-slate-100">LAP</div>
                         <div>
-                            <h4 class="font-bold text-slate-900 text-lg">${i.productName}</h4>
+                            <h4 class="font-bold text-slate-900 text-lg">${i.productName || 'Prodotto'}</h4>
                             <p class="text-[11px] text-slate-500 mt-1">
                                 Prezzo: <span class="font-semibold text-slate-900">${(parseFloat(i.priceSnapshot) || 0).toFixed(2)}€</span> 
                                 <span class="mx-3 text-slate-200">|</span> 
@@ -95,9 +101,14 @@ const UI = {
                             </p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <div class="text-[10px] font-bold text-slate-300 uppercase mb-1">Totale</div>
-                        <div class="font-bold text-slate-900 text-xl">${((parseFloat(i.priceSnapshot) || 0) * i.quantity).toFixed(2)}€</div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <div class="text-[10px] font-bold text-slate-300 uppercase mb-1">Totale</div>
+                            <div class="font-bold text-slate-900 text-xl">${((parseFloat(i.priceSnapshot) || 0) * i.quantity).toFixed(2)}€</div>
+                        </div>
+                        <button onclick="App.removeCartItem('${i.id}')" class="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition" title="Rimuovi">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 </div>
             `).join('');

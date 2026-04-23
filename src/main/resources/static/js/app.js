@@ -48,7 +48,8 @@ const App = {
     async loadProducts() {
         try {
             const res = await ApiService.getProducts();
-            this.state.products = res.data.data.content || res.data;
+            // Il backend ritorna ApiResponse<Page<ProductResponseDTO>>, quindi il dato è in res.data.data.content
+            this.state.products = res.data?.data?.content || res.data?.content || res.data || [];
             if (typeof UI !== 'undefined') UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore caricamento prodotti:', err);
@@ -60,7 +61,9 @@ const App = {
     async showProductDetail(slug) {
         try {
             const res = await ApiService.getProductBySlug(slug);
-            UI.renderProductDetail(res.data);
+            // Il backend ritorna ApiResponse<ProductResponseDTO>, quindi il dato è in res.data.data
+            const product = res.data.data || res.data;
+            UI.renderProductDetail(product);
         } catch (err) {
             console.error('[App] Errore dettaglio prodotto:', err);
             UI.showToast("Prodotto non trovato", "error");
@@ -72,7 +75,8 @@ const App = {
         if (!keyword) return this.loadProducts();
         try {
             const res = await ApiService.searchProducts(keyword);
-            this.state.products = res.data.data.content || res.data;
+            // Il backend ritorna ApiResponse<Page<ProductResponseDTO>>, quindi il dato è in res.data.data.content
+            this.state.products = res.data?.data?.content || res.data?.content || res.data || [];
             UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore ricerca:', err);
@@ -83,7 +87,8 @@ const App = {
     async syncCart() {
         try {
             const res = await ApiService.getCart();
-            this.state.cart = res.data;
+            // Il backend ritorna ApiResponse<CartResponseDTO>, quindi il dato è in res.data.data
+            this.state.cart = res.data?.data || res.data;
             if (typeof UI !== 'undefined') {
                 UI.renderCart(this.state.cart);
             }
@@ -111,7 +116,8 @@ const App = {
     async createGuestCartIfNeeded() {
         try {
             const res = await ApiService.createGuestCart();
-            this.state.guestCartId = res.data.cartId;
+            // Il backend ritorna ApiResponse con cartId in res.data.data.cartId
+            this.state.guestCartId = res.data?.data?.cartId || res.data?.cartId;
             localStorage.setItem('guestCartId', this.state.guestCartId);
             console.log('[App] Guest cart creato:', this.state.guestCartId);
             return true;
@@ -141,6 +147,19 @@ const App = {
         } catch (err) {
             console.error('[App] Errore addToCart:', err);
             UI.showToast(err.message || "Errore nell'aggiunta al carrello", "error");
+        }
+    },
+
+    async removeCartItem(itemId) {
+        if (!confirm("Sei sicuro di voler rimuovere questo prodotto dal carrello?")) return;
+        
+        try {
+            await ApiService.removeCartItem(itemId);
+            await this.syncCart();
+            UI.showToast("Prodotto rimosso dal carrello");
+        } catch (err) {
+            console.error('[App] Errore removeCartItem:', err);
+            UI.showToast(err.message || "Errore nella rimozione dal carrello", "error");
         }
     },
 
@@ -371,7 +390,8 @@ const App = {
         async loadProducts() {
             try {
                 const res = await ApiService.getProducts();
-                UI.renderAdminProducts(res.data.content || res.data);
+                // Il backend ritorna ApiResponse<Page<ProductResponseDTO>>, quindi il dato è in res.data.data.content
+                UI.renderAdminProducts(res.data?.data?.content || res.data?.content || res.data);
             } catch (err) {
                 console.error('[Admin] Errore loadProducts:', err);
                 UI.showToast("Errore caricamento prodotti", "error");
@@ -381,7 +401,8 @@ const App = {
         async loadCategories() {
             try {
                 const res = await ApiService.getCategories();
-                UI.renderAdminCategories(res.data || []);
+                // Il backend ritorna ApiResponse<List<CategoryResponseDTO>>, quindi il dato è in res.data.data
+                UI.renderAdminCategories(res.data?.data || res.data || []);
             } catch (err) {
                 console.error('[Admin] Errore loadCategories:', err);
                 UI.showToast("Errore caricamento categorie", "error");
@@ -391,7 +412,8 @@ const App = {
         async loadAllOrders() {
             try {
                 const res = await ApiService.getAllOrders();
-                UI.renderAdminOrders(res.data.content || res.data);
+                // Il backend ritorna ApiResponse<Page<OrderResponseDTO>>, quindi il dato è in res.data.data.content
+                UI.renderAdminOrders(res.data?.data?.content || res.data?.content || res.data);
             } catch (err) {
                 console.error('[Admin] Errore loadAllOrders:', err);
                 UI.showToast("Errore caricamento ordini", "error");
@@ -401,7 +423,8 @@ const App = {
         async loadUsers() {
             try {
                 const res = await ApiService.getAllUsers();
-                UI.renderAdminUsers(res.data || []);
+                // Il backend ritorna ApiResponse<List<UserResponseDTO>>, quindi il dato è in res.data.data
+                UI.renderAdminUsers(res.data?.data || res.data || []);
             } catch (err) {
                 console.error('[Admin] Errore loadUsers:', err);
                 UI.showToast("Errore caricamento utenti", "error");

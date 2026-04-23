@@ -51,7 +51,7 @@ const App = {
     async loadProducts() {
         try {
             const res = await ApiService.getProducts();
-            this.state.products = res.data.content || res.data;
+            this.state.products = res.data.data.content || res.data;
             if (typeof UI !== 'undefined') UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore caricamento prodotti:', err);
@@ -75,7 +75,7 @@ const App = {
         if (!keyword) return this.loadProducts();
         try {
             const res = await ApiService.searchProducts(keyword);
-            this.state.products = res.data.content || res.data;
+            this.state.products = res.data.data.content || res.data;
             UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore ricerca:', err);

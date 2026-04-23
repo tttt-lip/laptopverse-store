@@ -76,8 +76,7 @@ const ApiService = {
         }
 
         // Logging richiesta (solo in dev)
-        const isDev = window.location.hostname === 'localhost' || window.location.port !== '';
-        if (isDev) {
+        if (window?.location?.hostname === 'localhost') {
             console.groupCollapsed(`%c📡 API ${options.method || 'GET'} ${endpoint}`, 'color: #3b82f6; font-weight: 600;');
             console.log('Headers:', headers);
             if (options.body) console.log('Body:', JSON.parse(options.body));
@@ -119,8 +118,7 @@ const ApiService = {
                 }
 
                 // Logging risposta
-                const isDev = window.location.hostname === 'localhost' || window.location.port !== '';
-                if (isDev) {
+                if (window?.location?.hostname === 'localhost') {
                     console.groupCollapsed(`%c✅ RES ${response.status} ${endpoint}`, 'color: #10b981; font-weight: 600;');
                     console.log('Data:', data);
                     console.groupEnd();
@@ -521,8 +519,7 @@ Events.on('api:rateLimited', ({ retryAfter }) => {
 // ========================================
 // DEV MODE UTILITIES
 // ========================================
-const isDevMode = window.location.hostname === 'localhost' || window.location.port !== '';
-if (isDevMode) {
+if (window.location.hostname === 'localhost') {
     window.ApiMock = {
         // Simula risposta API con delay
         async mockResponse(data, delay = 300, status = 200) {

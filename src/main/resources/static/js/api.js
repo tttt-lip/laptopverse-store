@@ -39,6 +39,49 @@ const Events = {
 };
 
 // ========================================
+// GLOBAL HELPER FUNCTIONS
+// ========================================
+// Queste funzioni sono chiamate direttamente dall'HTML via onclick
+
+function showView(viewId) {
+    if (typeof UI !== 'undefined' && typeof UI.showView === 'function') {
+        UI.showView(viewId);
+    } else {
+        console.error('[showView] UI non disponibile');
+    }
+}
+
+function toggleAuth(view) {
+    const boxLogin = document.getElementById('box-login');
+    const boxRegister = document.getElementById('box-register');
+    
+    if (!boxLogin || !boxRegister) return;
+    
+    if (view === 'register') {
+        boxLogin.classList.add('hidden');
+        boxRegister.classList.remove('hidden');
+    } else {
+        boxRegister.classList.add('hidden');
+        boxLogin.classList.remove('hidden');
+    }
+}
+
+function logout() {
+    if (typeof App !== 'undefined' && typeof App.logout === 'function') {
+        App.logout();
+    }
+}
+
+function quickFillLogin() {
+    const select = document.getElementById('quick-fill-select');
+    if (!select || !select.value) return;
+    
+    const [email, password] = select.value.split(':');
+    document.getElementById('login-email').value = email;
+    document.getElementById('login-password').value = password;
+}
+
+// ========================================
 // API SERVICE
 // ========================================
 const ApiService = {
@@ -219,11 +262,17 @@ const ApiService = {
     },
 
     async getCurrentUser() {
-        return this.fetch('/users/me');
+        // Il backend non ha un endpoint /me, usiamo i dati dal localStorage
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (!user) {
+            throw new ApiError('Utente non loggato', 401, null, '/users/me');
+        }
+        return { data: user };
     },
 
     async updateProfile(userData) {
-        return this.fetch('/users/me', {
+        // L'endpoint backend è PUT /api/v1/users (senza userId, usa @AuthenticationPrincipal)
+        return this.fetch('/users', {
             method: 'PUT',
             body: JSON.stringify(userData)
         });
@@ -315,7 +364,7 @@ const ApiService = {
     },
 
     async removeCartItem(itemId) {
-        return this.fetch(`/cart/items/${itemId}`, { method: 'DELETE' });
+        return this.fetch(`/cart/item/${itemId}`, { method: 'DELETE' });
     },
 
     async clearCart() {

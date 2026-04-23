@@ -50,6 +50,7 @@ public class UserController {
         UserResponseDTO response = userService.register(dto, currentUser);
         return ResponseEntity.status(201).body(ApiResponse.success(response, "Created User"));
     }
+
     @Operation(summary = "Login user and set secure cookies")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -106,6 +107,14 @@ public class UserController {
                 cookieUtil.deleteRefershTokenCookie());
 
         return ResponseEntity.ok(new LogoutResponse("Logout successful."));
+    }
+
+    @PutMapping()
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> updateUser(@AuthenticationPrincipal User user,
+                                                                   @Valid @RequestBody UserUpdateDTO userUpdateDTO) {
+        UserResponseDTO userResponseDTO = userService.updateUserById(user.getId(), userUpdateDTO);
+        return ResponseEntity.ok(ApiResponse.success(userResponseDTO, "User updated"));
     }
 
     @GetMapping("/all")

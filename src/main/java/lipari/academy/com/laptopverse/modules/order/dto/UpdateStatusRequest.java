@@ -1,9 +1,10 @@
 package lipari.academy.com.laptopverse.modules.order.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lipari.academy.com.laptopverse.modules.order.model.OrderStatus;
-import lombok.Data;
 
-@Data
-public class UpdateStatusRequest {
-    private OrderStatus status;
+public record UpdateStatusRequest(
+        @NotNull(message = "Lo stato è obbligatorio")
+        OrderStatus status
+) {
 }

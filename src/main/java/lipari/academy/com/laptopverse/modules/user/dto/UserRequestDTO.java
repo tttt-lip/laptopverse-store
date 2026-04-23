@@ -23,7 +23,6 @@ public record UserRequestDTO(
         @Email(message = "Per favore, inserisci un indirizzo email valido.")
         String email,
 
-        @NotNull(message = "Il ruolo non può essere vuoto.")
         UserRole role
 ) {
 }

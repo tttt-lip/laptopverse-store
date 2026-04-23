@@ -36,10 +36,14 @@ public class UserServiceImp implements UserService {
         if (userRepository.existsByEmail(dto.email())) {
             throw DuplicateResourceException.emailAlreadyInUse(dto.email());
         }
-        if (currentUser == null && UserRole.ADMIN == dto.role()) {
+
+        UserRole finalRole = dto.role() != null ? dto.role() : UserRole.CUSTOMER;
+
+        if (currentUser == null && UserRole.ADMIN == finalRole) {
             throw new AccessDeniedException("You are not Admin");
         }
         User user = userMapper.toEntity(dto);
+        user.setRole(finalRole);
         user.setPassword(passwordEncoder.encode(dto.password()));
         user.setEnabled(true);
 

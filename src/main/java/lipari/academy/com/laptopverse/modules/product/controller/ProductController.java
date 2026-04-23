@@ -44,7 +44,7 @@ public class ProductController {
         productService.softDeleteProduct(id);
     }
 
-    @GetMapping("/{slug}")
+    @GetMapping("/slug/{slug}")
     public ResponseEntity<ApiResponse<ProductResponseDTO>> getBySlug(@PathVariable String slug) {
         ProductResponseDTO data = productService.getProductBySlug(slug);
         return ResponseEntity.ok(ApiResponse.success(data,"List Products Recuperated"));

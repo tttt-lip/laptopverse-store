@@ -30,7 +30,8 @@ public class CategoryController {
     }
 
 
-    @GetMapping("/alls")
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<CategoryDTO>>> findAllCategories() {
         List<CategoryDTO> categoryDTOList = categoryService.findAllCategories();
         return ResponseEntity.ok(ApiResponse.success(categoryDTOList, "Categoires All"));

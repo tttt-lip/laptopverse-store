@@ -227,7 +227,17 @@
                             <div class="p-8 border-b border-slate-50 bg-slate-50/30">
                                 <h3 class="font-bold text-slate-900 text-lg">Categorie Attive</h3>
                             </div>
-                            <div id="admin-categories-list" class="divide-y divide-slate-50"></div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            <th class="px-8 py-5">Nome Categoria</th>
+                                            <th class="px-8 py-5 text-center">Azioni</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-categories-table"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -236,8 +246,9 @@
             <!-- Tab: Admin Users -->
             <div id="tab-users" class="admin-tab hidden">
                 <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                    <div class="p-8 border-b border-slate-50 bg-slate-50/30">
+                    <div class="p-8 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
                         <h3 class="font-bold text-slate-900 text-lg">Gestione Utenti</h3>
+                        <button onclick="App.admin.openUserForm()" class="bg-indigo-600 text-white text-[10px] font-bold px-6 py-3 rounded-xl uppercase tracking-widest hover:bg-indigo-700 transition">Aggiungi Nuovo</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -292,6 +303,48 @@
                     <div class="pt-6 flex justify-end gap-4">
                         <button type="button" onclick="App.admin.closeProductForm()" class="px-8 py-4 text-xs font-bold text-slate-400 hover:text-slate-600 transition">Annulla</button>
                         <button type="submit" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Salva Prodotto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Form Modal -->
+        <div id="user-modal" class="fixed inset-0 z-[60] hidden">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="App.admin.closeUserForm()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white p-10 rounded-[2.5rem] shadow-2xl animate-viewEnter">
+                <form id="admin-user-form" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 id="user-modal-title" class="text-2xl font-bold text-slate-900">Dettagli Utente</h2>
+                    </div>
+                    <input type="hidden" id="form-user-id">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Nome</label>
+                            <input type="text" id="form-user-firstName" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Cognome</label>
+                            <input type="text" id="form-user-lastName" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Email</label>
+                            <input type="email" id="form-user-email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Password</label>
+                            <input type="password" id="form-user-password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Lascia vuoto se non vuoi cambiarla">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Ruolo</label>
+                            <select id="form-user-role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                                <option value="USER">Utente</option>
+                                <option value="ADMIN">Amministratore</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pt-6 flex justify-end gap-4">
+                        <button type="button" onclick="App.admin.closeUserForm()" class="px-8 py-4 text-xs font-bold text-slate-400 hover:text-slate-600 transition">Annulla</button>
+                        <button type="submit" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Salva Utente</button>
                     </div>
                 </form>
             </div>

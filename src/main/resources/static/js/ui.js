@@ -172,22 +172,34 @@ const UI = {
                     </span>
                 </td>
                 <td class="px-8 py-5 text-right font-bold text-slate-900">${(p.price || 0).toFixed(2)}€</td>
+                <td class="px-8 py-5">${p.createdAt ? new Date(p.createdAt).toLocaleDateString('it-IT') : '-'}</td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.openProductForm('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
-                    <button onclick="App.admin.deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
+                    <button onclick="App.admin.openProductForm('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Modifica">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button onclick="App.admin.deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 font-bold" title="Elimina">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                 </td>
             </tr>
         `).join('');
     },
 
     renderAdminCategories(categories) {
-        const list = document.getElementById('admin-categories-list');
-        if (!list) return;
-        list.innerHTML = categories.map(c => `
-            <div class="p-6 flex justify-between items-center hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
-                <span class="font-bold text-slate-900 text-sm">${c.name}</span>
-                <button onclick="App.admin.deleteCategory('${c.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Elimina</button>
-            </div>
+        const tbody = document.getElementById('admin-categories-table');
+        if (!tbody) return;
+        tbody.innerHTML = categories.map(c => `
+            <tr class="text-xs font-medium text-slate-600 border-b border-slate-50 hover:bg-slate-50">
+                <td class="px-8 py-5 font-bold text-slate-900">${c.name}</td>
+                <td class="px-8 py-5 text-center">
+                    <button onclick="App.admin.openCategoryForm('${c.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Modifica">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button onclick="App.admin.deleteCategory('${c.id}')" class="text-rose-500 hover:text-rose-700 font-bold" title="Elimina">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </td>
+            </tr>
         `).join('');
     },
 
@@ -232,7 +244,12 @@ const UI = {
                     </span>
                 </td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
+                    <button onclick="App.admin.openUserForm('${u.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3" title="Modifica">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
+                    <button onclick="App.admin.deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 font-bold" title="Elimina">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
                 </td>
             </tr>
         `).join('');

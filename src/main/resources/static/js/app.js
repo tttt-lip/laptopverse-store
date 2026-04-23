@@ -43,6 +43,9 @@ const App = {
 
         const categoryForm = document.getElementById('category-form');
         if (categoryForm) categoryForm.onsubmit = (e) => { e.preventDefault(); this.admin.saveCategory(e); };
+
+        const adminUserForm = document.getElementById('admin-user-form');
+        if (adminUserForm) adminUserForm.onsubmit = (e) => { e.preventDefault(); this.admin.saveUser(e); };
     },
 
     async loadProducts() {
@@ -591,6 +594,80 @@ const App = {
         closeProductForm() {
             const modal = document.getElementById('product-modal');
             if (modal) modal.classList.add('hidden');
+        },
+
+        // Gestione Utenti - Form
+        openUserForm(userId = null) {
+            const modal = document.getElementById('user-modal');
+            const title = document.getElementById('user-modal-title');
+            const form = document.getElementById('admin-user-form');
+
+            if (!modal || !title || !form) return;
+
+            title.innerText = userId ? "✏️ Modifica Utente" : "➕ Nuovo Utente";
+            document.getElementById('form-user-id').value = userId || '';
+
+            // Reset form se nuovo utente
+            if (!userId) {
+                form.reset();
+            } else {
+                // TODO: Caricare dati utente esistente per pre-fill
+                // await this.loadUserForEdit(userId);
+            }
+
+            modal.classList.remove('hidden');
+        },
+
+        closeUserForm() {
+            const modal = document.getElementById('user-modal');
+            if (modal) modal.classList.add('hidden');
+        },
+
+        async saveUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-user-id').value;
+            const data = {
+                firstName: document.getElementById('form-user-firstName').value,
+                lastName: document.getElementById('form-user-lastName').value,
+                email: document.getElementById('form-user-email').value,
+                role: document.getElementById('form-user-role').value,
+                isEnabled: true
+            };
+
+            const password = document.getElementById('form-user-password').value;
+            if (password) {
+                data.password = password;
+            }
+
+            try {
+                if (id) {
+                    await ApiService.fetch(`/users/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(data)
+                    });
+                    UI.showToast("Utente aggiornato con successo");
+                } else {
+                    await ApiService.fetch('/users/register', {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
+                    UI.showToast("Utente creato con successo");
+                }
+                this.closeUserForm();
+                this.loadUsers();
+            } catch (err) {
+                console.error('[Admin] Errore saveUser:', err);
+                UI.showToast(err.message || "Errore nel salvataggio", "error");
+            }
+        },
+
+        // Gestione Categorie - Form (placeholder per futura implementazione edit)
+        openCategoryForm(categoryId = null) {
+            if (categoryId) {
+                UI.showToast("Modifica categoria: funzionalità in sviluppo 🔧", "error");
+            } else {
+                document.getElementById('cat-name').focus();
+            }
         }
     },
 

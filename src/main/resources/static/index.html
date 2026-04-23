@@ -193,11 +193,10 @@
                                 <tr class="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
                                     <th class="px-8 py-5">Prodotto</th>
                                     <th class="px-8 py-5">Categoria</th>
-                                    <th class="px-8 py-5">SKU</th>
+                                    <th class="px-8 py-5 text-center">SKU</th>
                                     <th class="px-8 py-5 text-center">Stock</th>
                                     <th class="px-8 py-5 text-center">Stato</th>
                                     <th class="px-8 py-5 text-right">Prezzo</th>
-                                    <th class="px-8 py-5">Data Creazione</th>
                                     <th class="px-8 py-5 text-center">Azioni</th>
                                 </tr>
                             </thead>
@@ -233,11 +232,34 @@
                 </div>
             </div>
 
+            <!-- Tab: Admin Orders -->
+            <div id="tab-orders" class="admin-tab hidden">
+                <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                    <div class="p-8 border-b border-slate-50 bg-slate-50/30">
+                        <h3 class="font-bold text-slate-900 text-lg">Gestione Ordini</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <th class="px-8 py-5">Ordine</th>
+                                    <th class="px-8 py-5">Utente</th>
+                                    <th class="px-8 py-5 text-center">Stato</th>
+                                    <th class="px-8 py-5 text-center">Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-orders-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tab: Admin Users -->
             <div id="tab-users" class="admin-tab hidden">
                 <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                    <div class="p-8 border-b border-slate-50 bg-slate-50/30">
+                    <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
                         <h3 class="font-bold text-slate-900 text-lg">Gestione Utenti</h3>
+                        <button onclick="App.admin.openUserForm()" class="bg-indigo-600 text-white text-[10px] font-bold px-6 py-3 rounded-xl uppercase tracking-widest hover:bg-indigo-700 transition">Crea Utente</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -292,6 +314,32 @@
                     <div class="pt-6 flex justify-end gap-4">
                         <button type="button" onclick="App.admin.closeProductForm()" class="px-8 py-4 text-xs font-bold text-slate-400 hover:text-slate-600 transition">Annulla</button>
                         <button type="submit" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Salva Prodotto</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Form Modal -->
+        <div id="user-modal" class="fixed inset-0 z-[60] hidden">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="App.admin.closeUserForm()"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-2xl animate-viewEnter">
+                <form id="admin-user-form" onsubmit="App.admin.createUser(event)" class="space-y-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Crea Nuovo Utente</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" id="user-firstName" placeholder="Nome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                            <input type="text" id="user-lastName" placeholder="Cognome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <input type="email" id="user-email" placeholder="Email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <input type="password" id="user-password" placeholder="Password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        <select id="user-role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                            <option value="CUSTOMER">CUSTOMER (Utente)</option>
+                            <option value="ADMIN">ADMIN (Amministratore)</option>
+                        </select>
+                    </div>
+                    <div class="pt-6 flex justify-end gap-4">
+                        <button type="button" onclick="App.admin.closeUserForm()" class="px-8 py-4 text-xs font-bold text-slate-400 hover:text-slate-600 transition">Annulla</button>
+                        <button type="submit" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Crea Utente</button>
                     </div>
                 </form>
             </div>

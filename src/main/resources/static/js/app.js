@@ -48,7 +48,7 @@ const App = {
     async loadProducts() {
         try {
             const res = await ApiService.getProducts();
-            this.state.products = res.data.data.content || res.data;
+            this.state.products = res.data.data.content || res.data.data;
             if (typeof UI !== 'undefined') UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore caricamento prodotti:', err);
@@ -60,7 +60,7 @@ const App = {
     async showProductDetail(slug) {
         try {
             const res = await ApiService.getProductBySlug(slug);
-            UI.renderProductDetail(res.data);
+            UI.renderProductDetail(res.data.data);
         } catch (err) {
             console.error('[App] Errore dettaglio prodotto:', err);
             UI.showToast("Prodotto non trovato", "error");
@@ -72,7 +72,7 @@ const App = {
         if (!keyword) return this.loadProducts();
         try {
             const res = await ApiService.searchProducts(keyword);
-            this.state.products = res.data.data.content || res.data;
+            this.state.products = res.data.data.content || res.data.data;
             UI.renderProducts(this.state.products);
         } catch (err) {
             console.error('[App] Errore ricerca:', err);
@@ -83,23 +83,18 @@ const App = {
     async syncCart() {
         try {
             const res = await ApiService.getCart();
-            this.state.cart = res.data;
+            this.state.cart = res.data.data;
             if (typeof UI !== 'undefined') {
                 UI.renderCart(this.state.cart);
             }
         } catch (err) {
-            if (err.message && err.message.includes("Login required or provide X-Guest-Cart-Id Header")) {
-                console.error("[App] Errore auth carrello. Reset e redirect login.", err);
-                if (typeof UI !== 'undefined') {
-                    UI.showToast("Sessione scaduta. Effettua nuovamente il login.", "error");
-                }
+            if (err.status === 400 || (err.message && err.message.includes("provide X-Guest"))) {
+                console.warn("[App] Carrello non trovato o header mancante. Provo a creare guest cart.");
+                await this.createGuestCartIfNeeded();
+            } else if (err.status === 401) {
                 this.logout();
             } else {
                 console.warn("[App] Carrello non sincronizzato:", err.message);
-                // Se è un guest e non ha un cart ID, proviamo a crearne uno
-                if (!this.state.user && !this.state.guestCartId) {
-                    await this.createGuestCartIfNeeded();
-                }
                 this.state.cart = null;
                 if (typeof UI !== 'undefined') UI.renderCart(null);
             }
@@ -111,9 +106,9 @@ const App = {
     async createGuestCartIfNeeded() {
         try {
             const res = await ApiService.createGuestCart();
-            this.state.guestCartId = res.data.cartId;
-            localStorage.setItem('guestCartId', this.state.guestCartId);
-            console.log('[App] Guest cart creato:', this.state.guestCartId);
+            // L'ID viene già salvato in ApiService.createGuestCart
+            this.state.guestCartId = localStorage.getItem('guestCartId');
+            await this.syncCart();
             return true;
         } catch (err) {
             console.error('[App] Errore creazione guest cart:', err);
@@ -123,6 +118,17 @@ const App = {
 
     async addToCart(productId, quantity = 1) {
         if (isNaN(quantity) || quantity <= 0) return UI.showToast("Quantità non valida", 'error');
+
+        // Feedback visivo immediato (UX)
+        const stockEl = document.querySelector(`[data-product-stock="${productId}"]`);
+        let originalStock = 0;
+        if (stockEl) {
+            originalStock = parseInt(stockEl.innerText.replace('Stock: ', ''));
+            if (originalStock >= quantity) {
+                stockEl.innerText = `Stock: ${originalStock - quantity}`;
+                stockEl.classList.add('animate-pulse', 'text-amber-500');
+            }
+        }
 
         // Se guest e non ha cart ID, crealo prima
         if (!this.state.user && !this.state.guestCartId) {
@@ -140,7 +146,47 @@ const App = {
             UI.showToast("Prodotto aggiunto al carrello");
         } catch (err) {
             console.error('[App] Errore addToCart:', err);
+            // Revert feedback visivo in caso di errore
+            if (stockEl) {
+                stockEl.innerText = `Stock: ${originalStock}`;
+                stockEl.classList.remove('animate-pulse', 'text-amber-500');
+            }
             UI.showToast(err.message || "Errore nell'aggiunta al carrello", "error");
+        }
+    },
+
+    async updateCartItem(itemId, quantity) {
+        if (quantity <= 0) return this.removeCartItem(itemId);
+        try {
+            await ApiService.updateCartItem(itemId, quantity);
+            await this.syncCart();
+        } catch (err) {
+            console.error('[App] Errore updateCartItem:', err);
+            UI.showToast(err.message || "Errore nell'aggiornamento", "error");
+        }
+    },
+
+    async removeCartItem(itemId) {
+        if (!confirm("Rimuovere questo articolo dal carrello?")) return;
+        try {
+            await ApiService.removeCartItem(itemId);
+            await this.syncCart();
+            UI.showToast("Articolo rimosso");
+        } catch (err) {
+            console.error('[App] Errore removeCartItem:', err);
+            UI.showToast(err.message || "Errore nella rimozione", "error");
+        }
+    },
+
+    async clearCart() {
+        if (!confirm("Svuotare completamente il carrello?")) return;
+        try {
+            await ApiService.clearCart();
+            await this.syncCart();
+            UI.showToast("Carrello svuotato");
+        } catch (err) {
+            console.error('[App] Errore clearCart:', err);
+            UI.showToast(err.message || "Errore nello svuotamento", "error");
         }
     },
 
@@ -154,12 +200,6 @@ const App = {
             const response = await ApiService.login(email, pass);
             this.state.user = response.data || response;
             localStorage.setItem('user', JSON.stringify(this.state.user));
-
-            // Salva nelle quick accounts se richiesto
-            const quickSave = document.getElementById('quick-save-login');
-            if (quickSave?.checked) {
-                this.saveAccount(email, pass);
-            }
 
             await this.syncCart();
             UI.showView('view-products');
@@ -185,7 +225,6 @@ const App = {
             const res = await ApiService.register(data);
             UI.showToast("Registrazione completata! Ora puoi accedere.");
             toggleAuth('login');
-            // Pre-compila i campi login con l'email registrata
             document.getElementById('login-email').value = data.email;
         } catch (err) {
             console.error('[App] Registrazione fallita:', err);
@@ -220,8 +259,8 @@ const App = {
         };
 
         try {
-            const res = await ApiService.updateProfile(data);
-            this.state.user = res.data || { ...this.state.user, ...data };
+            await ApiService.updateProfile(data);
+            this.state.user = { ...this.state.user, ...data };
             localStorage.setItem('user', JSON.stringify(this.state.user));
             UI.showToast("Profilo aggiornato con successo");
             this.updateGlobalUI();
@@ -236,7 +275,7 @@ const App = {
         if (!this.state.user) return;
         try {
             const res = await ApiService.getOrders();
-            this.state.orders = res.data || [];
+            this.state.orders = res.data.data || [];
             UI.renderOrders(this.state.orders);
         } catch (err) {
             console.error('[App] Errore caricamento ordini:', err);
@@ -247,7 +286,11 @@ const App = {
     async cancelOrder(orderId) {
         if (!confirm("Sei sicuro di voler annullare questo ordine?")) return;
         try {
-            await ApiService.cancelOrder(orderId);
+            if (this.state.user?.role === 'ADMIN') {
+                await ApiService.updateOrderStatus(orderId, 'CANCELLED');
+            } else {
+                await ApiService.cancelOrder(orderId);
+            }
             UI.showToast("Ordine annullato");
             await this.loadOrders();
         } catch (err) {
@@ -272,6 +315,16 @@ const App = {
             console.error('[App] Checkout fallito:', err);
             UI.showToast(err.message || "Errore nel completamento ordine", "error");
         }
+    },
+
+    logout() {
+        ApiService.logout().finally(() => {
+            localStorage.clear();
+            this.state.user = null;
+            this.state.guestCartId = null;
+            this.state.cart = null;
+            location.reload();
+        });
     },
 
     // ✅ NUOVO: Salva account per quick login
@@ -320,19 +373,9 @@ const App = {
             adminNav.classList.toggle('hidden', !user || user.role !== 'ADMIN');
         }
 
-        // Show/hide auth-only links
+        // Show/hide auth-only links (Miei Ordini, Profilo) - Visibili anche per ADMIN
         document.querySelectorAll('.auth-only').forEach(el => {
             el.classList.toggle('hidden', !user);
-        });
-    },
-
-    logout() {
-        ApiService.logout().finally(() => {
-            localStorage.clear();
-            this.state.user = null;
-            this.state.guestCartId = null;
-            this.state.cart = null;
-            location.reload();
         });
     },
 
@@ -368,43 +411,66 @@ const App = {
             if (tab === 'users') this.loadUsers();
         },
 
-        async loadProducts() {
-            try {
-                const res = await ApiService.getProducts();
-                UI.renderAdminProducts(res.data.content || res.data);
-            } catch (err) {
-                console.error('[Admin] Errore loadProducts:', err);
-                UI.showToast("Errore caricamento prodotti", "error");
-            }
-        },
-
-        async loadCategories() {
-            try {
-                const res = await ApiService.getCategories();
-                UI.renderAdminCategories(res.data || []);
-            } catch (err) {
-                console.error('[Admin] Errore loadCategories:', err);
-                UI.showToast("Errore caricamento categorie", "error");
-            }
-        },
-
-        async loadAllOrders() {
-            try {
-                const res = await ApiService.getAllOrders();
-                UI.renderAdminOrders(res.data.content || res.data);
-            } catch (err) {
-                console.error('[Admin] Errore loadAllOrders:', err);
-                UI.showToast("Errore caricamento ordini", "error");
-            }
-        },
-
         async loadUsers() {
             try {
                 const res = await ApiService.getAllUsers();
-                UI.renderAdminUsers(res.data || []);
+                UI.renderAdminUsers(res.data.data || res.data || []);
             } catch (err) {
                 console.error('[Admin] Errore loadUsers:', err);
                 UI.showToast("Errore caricamento utenti", "error");
+            }
+        },
+
+        async createUser(e) {
+            e.preventDefault();
+            const data = {
+                firstName: document.getElementById('user-firstName').value,
+                lastName: document.getElementById('user-lastName').value,
+                email: document.getElementById('user-email').value,
+                password: document.getElementById('user-password').value,
+                role: document.getElementById('user-role').value
+            };
+
+            try {
+                await ApiService.register(data);
+                UI.showToast("Utente creato con successo");
+                this.closeUserForm();
+                this.loadUsers();
+            } catch (err) {
+                console.error('[Admin] Errore createUser:', err);
+                UI.showToast(err.message || "Errore nella creazione utente", "error");
+            }
+        },
+
+        openUserForm() {
+            const modal = document.getElementById('user-modal');
+            if (modal) modal.classList.remove('hidden');
+        },
+
+        closeUserForm() {
+            const modal = document.getElementById('user-modal');
+            if (modal) modal.classList.add('hidden');
+        },
+
+        async editProduct(id) {
+            try {
+                const res = await ApiService.getProductById(id);
+                const p = res.data.data;
+                this.openProductForm(id);
+                
+                // Pre-compila i campi
+                document.getElementById('form-name').value = p.name;
+                document.getElementById('form-price').value = p.price;
+                document.getElementById('form-stock').value = p.stockQuantity;
+                document.getElementById('form-specs').value = p.specs || '';
+                
+                // Imposta la categoria (dopo aver caricato le categorie nel form)
+                setTimeout(() => {
+                    document.getElementById('form-category').value = p.categoryId;
+                }, 500);
+            } catch (err) {
+                console.error('[Admin] Errore editProduct:', err);
+                UI.showToast("Errore caricamento dati prodotto", "error");
             }
         },
 
@@ -423,16 +489,10 @@ const App = {
 
             try {
                 if (id) {
-                    await ApiService.fetch(`/products/${id}`, {
-                        method: 'PUT',
-                        body: JSON.stringify(data)
-                    });
+                    await ApiService.updateProduct(id, data);
                     UI.showToast("Prodotto aggiornato con successo");
                 } else {
-                    await ApiService.fetch('/products', {
-                        method: 'POST',
-                        body: JSON.stringify(data)
-                    });
+                    await ApiService.createProduct(data);
                     UI.showToast("Prodotto creato con successo");
                 }
                 this.closeProductForm();
@@ -450,10 +510,7 @@ const App = {
             if (!name) return UI.showToast("Inserisci un nome per la categoria", "error");
 
             try {
-                await ApiService.fetch('/categories', {
-                    method: 'POST',
-                    body: JSON.stringify({ name })
-                });
+                await ApiService.createCategory(name);
                 document.getElementById('category-form').reset();
                 UI.showToast("Categoria creata con successo");
                 this.loadCategories();
@@ -467,7 +524,7 @@ const App = {
         async deleteProduct(id) {
             if (!confirm("Sei sicuro di voler eliminare definitivamente questo prodotto?")) return;
             try {
-                await ApiService.fetch(`/products/${id}`, { method: 'DELETE' });
+                await ApiService.deleteProduct(id);
                 UI.showToast("Prodotto eliminato");
                 this.loadProducts();
             } catch (err) {
@@ -579,7 +636,7 @@ const App = {
 
             try {
                 const res = await ApiService.getCategories();
-                const categories = res.data || [];
+                const categories = res.data.data || [];
                 select.innerHTML = `<option value="">Seleziona categoria...</option>` +
                     categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
             } catch (err) {

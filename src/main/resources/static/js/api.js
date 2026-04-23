@@ -261,17 +261,17 @@ const ApiService = {
 
     // 🎯 SHORTCUT METHODS - CATEGORIES
     async getCategories() {
-        return this.fetch('/categories');
+        return this.fetch('/categories/all');
     },
 
     async getCategoryById(id) {
         return this.fetch(`/categories/${id}`);
     },
 
-    async createCategory(name, description = '') {
+    async createCategory(name) {
         return this.fetch('/categories', {
             method: 'POST',
-            body: JSON.stringify({ name, description })
+            body: JSON.stringify({ name })
         });
     },
 
@@ -292,10 +292,10 @@ const ApiService = {
     },
 
     async createGuestCart() {
-        const res = await this.fetch('/cart/guest', { method: 'POST' });
+        const res = await this.fetch('/cart/guest', { method: 'GET' });
         // Salva l'ID del guest cart in localStorage
-        if (res.data?.cartId) {
-            localStorage.setItem('guestCartId', res.data.cartId);
+        if (res.data?.data?.id) {
+            localStorage.setItem('guestCartId', res.data.data.id);
         }
         return res;
     },
@@ -315,11 +315,11 @@ const ApiService = {
     },
 
     async removeCartItem(itemId) {
-        return this.fetch(`/cart/items/${itemId}`, { method: 'DELETE' });
+        return this.fetch(`/cart/item/${itemId}`, { method: 'DELETE' });
     },
 
     async clearCart() {
-        return this.fetch('/cart/clear', { method: 'POST' });
+        return this.fetch('/cart', { method: 'DELETE' });
     },
 
     // 🎯 SHORTCUT METHODS - ORDERS
@@ -343,14 +343,13 @@ const ApiService = {
             method: 'POST',
             body: JSON.stringify({
                 shippingAddress,
-                paymentMethod,
-                saveAddress: false // TODO: aggiungere checkbox UI
+                paymentMethod
             })
         });
     },
 
     async cancelOrder(orderId) {
-        return this.fetch(`/orders/${orderId}/cancel`, { method: 'POST' });
+        return this.fetch(`/orders/${orderId}/cancelled`, { method: 'PATCH' });
     },
 
     async updateOrderStatus(orderId, status) {
@@ -370,7 +369,7 @@ const ApiService = {
     // 🎯 SHORTCUT METHODS - USERS (ADMIN)
     async getAllUsers(params = {}) {
         const query = new URLSearchParams(params).toString();
-        return this.fetch(`/users${query ? `?${query}` : ''}`);
+        return this.fetch(`/users/all${query ? `?${query}` : ''}`);
     },
 
     async getUserById(id) {

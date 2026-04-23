@@ -10,19 +10,19 @@ const UI = {
     renderProducts(products) {
         const grid = document.getElementById('products-grid');
         if (!grid) return;
-        grid.innerHTML = products.map(p => `
+        grid.innerHTML = (products || []).map(p => `
             <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" onclick="App.showProductDetail('${p.slug}')">
                 <div class="relative h-48 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center text-slate-200 overflow-hidden">
                     <svg class="w-12 h-12 text-slate-200 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    <div class="absolute top-3 right-3 ${p.stockQuantity < 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} text-[10px] font-bold px-2.5 py-1 rounded-lg border border-current opacity-90">
+                    <div data-product-stock="${p.id}" class="absolute top-3 right-3 ${p.stockQuantity < 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} text-[10px] font-bold px-2.5 py-1 rounded-lg border border-current opacity-90 transition-all duration-500">
                         Stock: ${p.stockQuantity}
                     </div>
                 </div>
                 <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1.5">${p.categoryName || 'Senza categoria'}</div>
-                <h3 class="font-bold text-slate-900 text-base mb-1 group-hover:text-indigo-600 transition-colors">${p.name}</h3>
+                <h3 class="font-bold text-slate-900 text-base mb-1 group-hover:text-indigo-600 transition-colors">${p.name || 'Prodotto'}</h3>
                 <p class="text-slate-400 text-[11px] mb-5 line-clamp-2 leading-relaxed">${p.specs || 'Nessuna specifica'}</p>
                 <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <span class="text-xl font-bold text-slate-900">${(p.price || 0).toFixed(2)}€</span>
+                    <span class="text-xl font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</span>
                     <button onclick="event.stopPropagation(); App.addToCart('${p.id}')" class="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-indigo-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     </button>
@@ -82,17 +82,30 @@ const UI = {
         }
 
         if (list) {
-            list.innerHTML = cart.items.map(i => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow">
+            list.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-slate-900">Articoli (${cart.totalQuantity})</h3>
+                    <button onclick="App.clearCart()" class="text-rose-500 text-xs font-bold hover:underline">Svuota Carrello</button>
+                </div>
+                ` + cart.items.map(i => `
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 flex justify-between items-center shadow-sm hover:shadow-md transition-shadow mb-4">
                     <div class="flex items-center gap-6">
                         <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-indigo-400 font-bold text-[10px] border border-slate-100">LAP</div>
                         <div>
                             <h4 class="font-bold text-slate-900 text-lg">${i.productName}</h4>
-                            <p class="text-[11px] text-slate-500 mt-1">
-                                Prezzo: <span class="font-semibold text-slate-900">${(parseFloat(i.priceSnapshot) || 0).toFixed(2)}€</span> 
-                                <span class="mx-3 text-slate-200">|</span> 
-                                Quantità: <span class="font-semibold text-indigo-600">${i.quantity}</span>
-                            </p>
+                            <div class="flex items-center gap-4 mt-2">
+                                <p class="text-[11px] text-slate-500">
+                                    Prezzo: <span class="font-semibold text-slate-900">${(parseFloat(i.priceSnapshot) || 0).toFixed(2)}€</span>
+                                </p>
+                                <div class="flex items-center bg-slate-50 rounded-lg border border-slate-100">
+                                    <button onclick="App.updateCartItem('${i.id}', ${i.quantity - 1})" class="px-2 py-1 text-slate-400 hover:text-indigo-600">-</button>
+                                    <span class="text-xs font-bold px-2">${i.quantity}</span>
+                                    <button onclick="App.updateCartItem('${i.id}', ${i.quantity + 1})" class="px-2 py-1 text-slate-400 hover:text-indigo-600">+</button>
+                                </div>
+                                <button onclick="App.removeCartItem('${i.id}')" class="text-rose-400 hover:text-rose-600 ml-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="text-right">
@@ -118,14 +131,14 @@ const UI = {
             return;
         }
         list.innerHTML = orders.map(o => `
-            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-8">
                 <div class="p-8 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100">
                     <div>
                         <div class="flex items-center gap-4 mb-2">
-                            <span class="font-bold text-slate-900 text-lg uppercase tracking-tight">Ordine #${o.orderNumber.split('-').pop()}</span>
-                            <span class="text-[10px] font-bold px-3 py-1 rounded-lg uppercase tracking-wider ${this.getStatusClass(o.status)} border border-current opacity-90">${o.status}</span>
+                            <span class="font-bold text-slate-900 text-lg uppercase tracking-tight">Ordine #${o.orderNumber ? o.orderNumber.split('-').pop() : (o.id ? o.id.substring(0,8) : 'N/A')}</span>
+                            <span class="text-[10px] font-bold px-3 py-1 rounded-lg uppercase tracking-wider ${this.getStatusClass(o.status)} border border-current opacity-90">${o.status || 'UNKNOWN'}</span>
                         </div>
-                        <p class="text-xs text-slate-500">Spedito a: ${o.shippingAddress}</p>
+                        <p class="text-xs text-slate-500">Spedito a: ${o.shippingAddress || 'N/A'}</p>
                     </div>
                     <div class="text-right">
                         <div class="text-[10px] text-slate-400 font-bold uppercase mb-1">Totale Ordine</div>
@@ -133,12 +146,12 @@ const UI = {
                     </div>
                 </div>
                 <div class="p-8 space-y-4">
-                    ${o.items.map(item => `
+                    ${(o.items || []).map(item => `
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-slate-600 font-medium">
-                                <span class="font-bold text-slate-900 mr-2">${item.quantity}x</span> ${item.productNameSnapshot}
+                                <span class="font-bold text-slate-900 mr-2">${item.quantity || 1}x</span> ${item.productNameSnapshot || item.productName || 'Prodotto'}
                             </span>
-                            <span class="font-bold text-slate-900">${((parseFloat(item.unitPriceSnapshot) || 0) * item.quantity).toFixed(2)}€</span>
+                            <span class="font-bold text-slate-900">${((parseFloat(item.unitPriceSnapshot) || 0) * (item.quantity || 1)).toFixed(2)}€</span>
                         </div>
                     `).join('')}
                     
@@ -161,19 +174,20 @@ const UI = {
         tbody.innerHTML = products.map(p => `
             <tr class="text-xs font-medium text-slate-600 border-b border-slate-50 hover:bg-slate-50">
                 <td class="px-8 py-5">
-                    <div class="font-bold text-slate-900">${p.name}</div>
-                    <div class="text-[9px] text-slate-400 uppercase tracking-wider">SKU: ${p.sku || '-'} | SLUG: ${p.slug || '-'}</div>
+                    <div class="font-bold text-slate-900">${p.name || 'N/A'}</div>
+                    <div class="text-[9px] text-slate-400 uppercase tracking-wider">SLUG: ${p.slug || '-'}</div>
                 </td>
                 <td class="px-8 py-5">${p.categoryName || '-'}</td>
+                <td class="px-8 py-5 text-center">${p.sku || '-'}</td>
                 <td class="px-8 py-5 text-center">${p.stockQuantity || 0}</td>
                 <td class="px-8 py-5 text-center">
-                    <span class="px-2 py-1 rounded ${p.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'} font-bold text-[9px] uppercase">
-                        ${p.isActive ? 'Attivo' : 'Inattivo'}
+                    <span class="px-2 py-1 rounded ${p.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'} font-bold text-[9px] uppercase">
+                        ${p.isActive !== false ? 'Attivo' : 'Inattivo'}
                     </span>
                 </td>
-                <td class="px-8 py-5 text-right font-bold text-slate-900">${(p.price || 0).toFixed(2)}€</td>
+                <td class="px-8 py-5 text-right font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.openProductForm('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
+                    <button onclick="App.admin.editProduct('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
                     <button onclick="App.admin.deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
                 </td>
             </tr>
@@ -185,7 +199,7 @@ const UI = {
         if (!list) return;
         list.innerHTML = categories.map(c => `
             <div class="p-6 flex justify-between items-center hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
-                <span class="font-bold text-slate-900 text-sm">${c.name}</span>
+                <span class="font-bold text-slate-900 text-sm">${c.name || 'N/A'}</span>
                 <button onclick="App.admin.deleteCategory('${c.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Elimina</button>
             </div>
         `).join('');
@@ -195,20 +209,15 @@ const UI = {
         const tbody = document.getElementById('admin-orders-table');
         if (!tbody) return;
         const orders = ordersData.content || ordersData;
-        tbody.innerHTML = orders.map(o => `
+        tbody.innerHTML = (Array.isArray(orders) ? orders : []).map(o => `
             <tr class="text-xs font-medium text-slate-600 border-b border-slate-50 hover:bg-slate-50">
-                <td class="px-8 py-5 text-slate-900 font-bold">#${o.orderNumber ? o.orderNumber.split('-').pop() : 'N/A'}</td>
-                <td class="px-8 py-5">${o.userEmail || (o.user ? o.user.email : 'N/A')}</td>
+                <td class="px-8 py-5 text-slate-900 font-bold">#${o.orderNumber ? o.orderNumber.split('-').pop() : (o.id ? o.id.substring(0,8) : 'N/A')}</td>
+                <td class="px-8 py-5">${o.userEmail || 'N/A'}</td>
                 <td class="px-8 py-5 text-center">
                     <select onchange="App.admin.updateOrderStatus('${o.id}', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none font-bold uppercase text-[9px]">
                         ${['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(s => 
                             `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
-                </td>
-                <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.toggleOrderEnabled('${o.id}', ${!o.isEnabled})" class="relative inline-flex h-6 w-11 items-center rounded-full ${o.isEnabled ? 'bg-emerald-500' : 'bg-slate-300'} transition">
-                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition ${o.isEnabled ? 'translate-x-6' : 'translate-x-1'}"></span>
-                    </button>
                 </td>
                 <td class="px-8 py-5 text-center">
                     <button onclick="App.admin.editOrder('${o.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>

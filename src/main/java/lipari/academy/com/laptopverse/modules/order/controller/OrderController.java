@@ -5,6 +5,7 @@ import lipari.academy.com.laptopverse.common.ApiResponse;
 import lipari.academy.com.laptopverse.modules.order.dto.CheckoutRequest;
 import lipari.academy.com.laptopverse.modules.order.dto.OrderResponseDTO;
 import lipari.academy.com.laptopverse.modules.order.dto.UpdateStatusRequest;
+import lipari.academy.com.laptopverse.modules.order.model.OrderStatus;
 import lipari.academy.com.laptopverse.modules.order.service.OrderService;
 import lipari.academy.com.laptopverse.modules.user.model.User;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +35,7 @@ public class OrderController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody CheckoutRequest checkoutRequest) {
 
-        OrderResponseDTO data = orderService.checkout(currentUser.getId(), checkoutRequest.getShippingAddress());
+        OrderResponseDTO data = orderService.checkout(currentUser.getId(), checkoutRequest.shippingAddress());
         return new ResponseEntity<>(ApiResponse.success(data, "Order placed successfully"), HttpStatus.CREATED);
     }
 
@@ -46,6 +48,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> getOrderById(
             @AuthenticationPrincipal User currentUser,
             @PathVariable UUID id) {
@@ -54,13 +57,23 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(data, "Order found"));
     }
 
+    @PatchMapping("/{id}/cancelled")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<ApiResponse<OrderResponseDTO>> cancelOrder(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+
+        OrderResponseDTO data = orderService.cancelOrder(id, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(data, "Order cancelled successfully"));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> updateStatus(
             @PathVariable UUID id,
-            @RequestBody UpdateStatusRequest request) {
+            @Valid @RequestBody UpdateStatusRequest request) {
 
-        OrderResponseDTO data = orderService.updateOrderStatus(id, request.getStatus());
+        OrderResponseDTO data = orderService.updateOrderStatus(id, request.status());
         return ResponseEntity.ok(ApiResponse.success(data, "Order status updated successfully"));
     }
 
@@ -68,7 +81,7 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<OrderResponseDTO>>> getAllOrdersForAdmin(
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        
+
         Page<OrderResponseDTO> data = orderService.getAllOrders(pageable);
         return ResponseEntity.ok(ApiResponse.success(data, "All orders retrieved successfully"));
     }

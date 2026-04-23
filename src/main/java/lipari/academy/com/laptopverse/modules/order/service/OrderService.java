@@ -13,5 +13,7 @@ public interface OrderService {
     OrderResponseDTO getOrderById(UUID orderId, UUID userId);
     List<OrderResponseDTO> getOrderByUserId(UUID userId);
     OrderResponseDTO updateOrderStatus(UUID orderId, OrderStatus newStatus);
+    OrderResponseDTO cancelOrder(UUID orderId, UUID userId);
+    OrderResponseDTO paidOrder(UUID orderId, UUID userId);
     Page<OrderResponseDTO> getAllOrders(Pageable pageable);
 }

@@ -82,6 +82,7 @@ public class OrderServiceImp implements OrderService {
             BigDecimal itemTotal = product.getPrice().multiply(new BigDecimal(cartItem.getQuantity()));
             total = total.add(itemTotal);
 
+
             product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
             productRepository.save(product);
         }
@@ -124,7 +125,47 @@ public class OrderServiceImp implements OrderService {
 
         order.setStatus(newStatus);
         Order updatedOrder = orderRepository.save(order);
+
+        if (newStatus == OrderStatus.CANCELLED) {
+            restoreProductStock(updatedOrder);
+        }
+
         return orderMapper.toOrderDTO(updatedOrder);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponseDTO cancelOrder(UUID orderId, UUID userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new InvalidStatusTransitionException("");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        Order cancelledOrder = orderRepository.save(order);
+        
+        restoreProductStock(cancelledOrder);
+
+        return orderMapper.toOrderDTO(cancelledOrder);
+    }
+
+    @Override
+    public OrderResponseDTO paidOrder(UUID orderId, UUID userId) {
+        return null;
+    }
+
+    private void restoreProductStock(Order order) {
+        for (OrderItem orderItem : order.getItems()) {
+            Product product = orderItem.getProduct();
+            product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
+            productRepository.save(product);
+        }
     }
 
     @Override

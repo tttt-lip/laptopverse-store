@@ -1,6 +1,10 @@
 server:
   port: 8080
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [User: %X{user}] [Path: %X{method} %X{uri}] - %msg%n"
+
 spring:
   application:
     name: laptopverse-api

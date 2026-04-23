@@ -13,7 +13,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: false
@@ -37,3 +37,12 @@ logging:
   level:
     root: INFO
     lipari.academy.com.laptopverse: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+
+devtools:
+  livereload:
+    enabled: true # Invia un segnale al browser per rinfrescare la pagina
+  restart:
+    additional-paths: src/main/resources/static/** # Monitora la cartella static

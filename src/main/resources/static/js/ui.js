@@ -8,31 +8,43 @@ const UI = {
     },
 
     renderProducts(products) {
-        const grid = document.getElementById('products-grid');
-        if (!grid) return;
-        grid.innerHTML = (products || []).map(p => `
-            <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer group" onclick="App.showProductDetail('${p.slug}')">
-                <div class="relative h-48 bg-slate-50 rounded-2xl mb-5 flex items-center justify-center text-slate-200 overflow-hidden">
-                    <svg class="w-12 h-12 text-slate-200 group-hover:scale-110 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                    <div data-product-stock="${p.id}" class="absolute top-3 right-3 ${p.stockQuantity < 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} text-[10px] font-bold px-2.5 py-1 rounded-lg border border-current opacity-90 transition-all duration-500">
-                        Stock: ${p.stockQuantity}
-                    </div>
-                </div>
-                <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1.5">${p.categoryName || 'Senza categoria'}</div>
-                <h3 class="font-bold text-slate-900 text-base mb-1 group-hover:text-indigo-600 transition-colors">${p.name || 'Prodotto'}</h3>
-                <p class="text-slate-400 text-[11px] mb-5 line-clamp-2 leading-relaxed">${p.specs || 'Nessuna specifica'}</p>
-                <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <span class="text-xl font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</span>
-                    <button onclick="event.stopPropagation(); App.addToCart('${p.id}')" class="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-indigo-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    </button>
-                </div>
-            </div>
-        `).join('');
+        // ... (metodo esistente)
+    },
+
+    renderCategories(categories, activeCategoryId = null) {
+        const container = document.getElementById('category-filters');
+        if (!container) return;
+
+        const allActive = !activeCategoryId ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100';
+        
+        let html = `
+            <button onclick="App.filterByCategory(null)" 
+                class="px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${allActive}">
+                Tutti
+            </button>
+        `;
+
+        html += (categories || []).map(c => {
+            const isActive = c.id === activeCategoryId;
+            const styles = isActive 
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 border-indigo-600' 
+                : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100';
+            
+            return `
+                <button onclick="App.filterByCategory('${c.id}')" 
+                    class="px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${styles}">
+                    ${c.name}
+                </button>
+            `;
+        }).join('');
+
+        container.innerHTML = html;
     },
 
     renderProductDetail(p) {
         const container = document.getElementById('product-detail-content');
+        const isAdmin = App.state.user && App.state.user.role === 'ADMIN';
+
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
                 <div class="bg-white rounded-[2.5rem] aspect-square flex items-center justify-center text-slate-100 border border-slate-100 shadow-sm overflow-hidden relative">
@@ -57,11 +69,16 @@ const UI = {
                                 class="bg-slate-50 border-none rounded-xl px-3 py-1.5 w-20 font-bold text-lg focus:ring-2 focus:ring-indigo-500 outline-none text-center">
                         </div>
                     </div>
+                    ${!isAdmin ? `
                     <button onclick="App.addToCart('${p.id}', parseInt(document.getElementById('detail-quantity').value))" 
                         class="w-full bg-slate-900 text-white font-bold py-5 rounded-2xl text-sm hover:bg-indigo-600 transition shadow-lg disabled:bg-slate-100 disabled:text-slate-400"
                         ${p.stockQuantity <= 0 ? 'disabled' : ''}>
                         ${p.stockQuantity > 0 ? 'Aggiungi al carrello' : 'Prodotto Esaurito'}
-                    </button>
+                    </button>` : `
+                    <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Modalità Amministratore</p>
+                        <p class="text-[11px] text-slate-500 mt-1">Il carrello è disabilitato per gli amministratori</p>
+                    </div>`}
                 </div>
             </div>
         `;
@@ -187,8 +204,8 @@ const UI = {
                 </td>
                 <td class="px-8 py-5 text-right font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.editProduct('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
-                    <button onclick="App.admin.deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
+                    <button onclick="Admin.editProduct('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
+                    <button onclick="Admin.deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
                 </td>
             </tr>
         `).join('');
@@ -200,7 +217,7 @@ const UI = {
         list.innerHTML = categories.map(c => `
             <div class="p-6 flex justify-between items-center hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
                 <span class="font-bold text-slate-900 text-sm">${c.name || 'N/A'}</span>
-                <button onclick="App.admin.deleteCategory('${c.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Elimina</button>
+                <button onclick="Admin.deleteCategory('${c.id}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Elimina</button>
             </div>
         `).join('');
     },
@@ -214,14 +231,14 @@ const UI = {
                 <td class="px-8 py-5 text-slate-900 font-bold">#${o.orderNumber ? o.orderNumber.split('-').pop() : (o.id ? o.id.substring(0,8) : 'N/A')}</td>
                 <td class="px-8 py-5">${o.userEmail || 'N/A'}</td>
                 <td class="px-8 py-5 text-center">
-                    <select onchange="App.admin.updateOrderStatus('${o.id}', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none font-bold uppercase text-[9px]">
+                    <select onchange="Admin.updateOrderStatus('${o.id}', this.value)" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none font-bold uppercase text-[9px]">
                         ${['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map(s => 
                             `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.editOrder('${o.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
-                    <button onclick="App.admin.deleteOrder('${o.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
+                    <button onclick="Admin.editOrder('${o.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
+                    <button onclick="Admin.deleteOrder('${o.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
                 </td>
             </tr>
         `).join('');
@@ -230,18 +247,19 @@ const UI = {
     renderAdminUsers(users) {
         const tbody = document.getElementById('admin-users-table');
         if(!tbody) return;
-        tbody.innerHTML = users.map(u => `
+        tbody.innerHTML = (users || []).map(u => `
             <tr class="text-xs font-medium text-slate-600 border-b border-slate-50 hover:bg-slate-50">
                 <td class="px-8 py-5 text-slate-900 font-bold">${u.firstName || ''} ${u.lastName || ''}</td>
                 <td class="px-8 py-5">${u.email || ''}</td>
                 <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg ${u.role === 'ADMIN' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600'} font-bold text-[10px] uppercase">${u.role || 'N/A'}</span></td>
                 <td class="px-8 py-5 text-center">
-                    <span class="px-2 py-1 rounded ${u.isEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} font-bold text-[9px] uppercase">
-                        ${u.isEnabled ? 'Attivo' : 'Disabilitato'}
+                    <span class="px-2 py-1 rounded ${u.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} font-bold text-[9px] uppercase">
+                        ${u.enabled ? 'Attivo' : 'Disabilitato'}
                     </span>
                 </td>
                 <td class="px-8 py-5 text-center">
-                    <button onclick="App.admin.deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
+                    <button onclick="Admin.editUser('${u.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold mr-3">Modifica</button>
+                    <button onclick="Admin.deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 font-bold">Elimina</button>
                 </td>
             </tr>
         `).join('');

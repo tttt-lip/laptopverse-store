@@ -5,18 +5,20 @@ const App = {
         products: [],
         cart: null,
         orders: [],
+        categories: [],
         savedAccounts: JSON.parse(localStorage.getItem('saved_accounts')) || []
     },
 
     async init() {
         this.setupListeners();
         this.updateQuickFillDropdown();
+        await this.loadCategories();
         await this.loadProducts();
         if (this.state.user || this.state.guestCartId) await this.syncCart();
         this.updateGlobalUI();
         
         if (this.state.user && this.state.user.role === 'ADMIN') {
-            this.admin.loadProducts();
+            Admin.loadProducts();
         }
     },
 
@@ -24,7 +26,7 @@ const App = {
         Events.on('logout-required', () => this.logout());
         Events.on('view-changed', (viewId) => {
             if (viewId === 'view-orders') this.loadOrders();
-            if (viewId === 'view-admin') this.admin.setTab(this.admin.currentTab);
+            if (viewId === 'view-admin') Admin.setTab(Admin.currentTab);
             if (viewId === 'view-profile' && this.state.user) this.fillProfileForm();
         });
 
@@ -39,21 +41,41 @@ const App = {
         if (profileForm) profileForm.onsubmit = (e) => { e.preventDefault(); this.handleUpdateProfile(e); };
 
         const adminProductForm = document.getElementById('admin-product-form');
-        if (adminProductForm) adminProductForm.onsubmit = (e) => { e.preventDefault(); this.admin.saveProduct(e); };
+        if (adminProductForm) adminProductForm.onsubmit = (e) => { e.preventDefault(); Admin.saveProduct(e); };
 
         const categoryForm = document.getElementById('category-form');
-        if (categoryForm) categoryForm.onsubmit = (e) => { e.preventDefault(); this.admin.saveCategory(e); };
+        if (categoryForm) categoryForm.onsubmit = (e) => { e.preventDefault(); Admin.saveCategory(e); };
     },
 
-    async loadProducts() {
+    async loadProducts(categoryId = null) {
         try {
-            const res = await ApiService.getProducts();
+            const res = categoryId 
+                ? await ApiService.fetch(`/products/category/${categoryId}`)
+                : await ApiService.getProducts();
+                
             this.state.products = res.data.data.content || res.data.data;
-            if (typeof UI !== 'undefined') UI.renderProducts(this.state.products);
+            if (typeof UI !== 'undefined') {
+                UI.renderProducts(this.state.products);
+                UI.renderCategories(this.state.categories, categoryId);
+            }
         } catch (err) {
             console.error('[App] Errore caricamento prodotti:', err);
             UI?.showToast("Errore nel caricamento dei prodotti", "error");
         }
+    },
+
+    async loadCategories() {
+        try {
+            const res = await ApiService.getCategories();
+            this.state.categories = res.data.data || [];
+            if (typeof UI !== 'undefined') UI.renderCategories(this.state.categories);
+        } catch (err) {
+            console.error('[App] Errore caricamento categorie:', err);
+        }
+    },
+
+    async filterByCategory(categoryId) {
+        await this.loadProducts(categoryId);
     },
 
     // ✅ NUOVO: Mostra dettaglio prodotto
@@ -255,7 +277,8 @@ const App = {
         const data = {
             firstName: document.getElementById('profile-firstName').value,
             lastName: document.getElementById('profile-lastName').value,
-            email: document.getElementById('profile-email').value
+            email: document.getElementById('profile-email').value,
+            role: document.getElementById('profile-role-badge').innerText
         };
 
         try {
@@ -369,286 +392,26 @@ const App = {
 
         // Show/hide admin nav link
         const adminNav = document.getElementById('nav-admin');
+        const isAdmin = user && user.role === 'ADMIN';
         if (adminNav) {
-            adminNav.classList.toggle('hidden', !user || user.role !== 'ADMIN');
+            adminNav.classList.toggle('hidden', !isAdmin);
         }
 
-        // Show/hide auth-only links (Miei Ordini, Profilo) - Visibili anche per ADMIN
+        // Hide cart and orders for ADMIN
+        const cartBtn = document.querySelector('button[onclick="showView(\'view-cart\')"]');
+        if (cartBtn) {
+            cartBtn.classList.toggle('hidden', isAdmin);
+        }
+
+        // Show/hide auth-only links (Miei Ordini, Profilo)
         document.querySelectorAll('.auth-only').forEach(el => {
-            el.classList.toggle('hidden', !user);
-        });
-    },
-
-    // ========================================
-    // ADMIN MODULE
-    // ========================================
-    admin: {
-        currentTab: 'products',
-
-        setTab(tab) {
-            this.currentTab = tab;
-
-            // Hide all tabs
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
-            const target = document.getElementById(`tab-${tab}`);
-            if(target) target.classList.remove('hidden');
-
-            // Update button styles
-            document.querySelectorAll('[id^="tab-btn-"]').forEach(b => {
-                b.classList.remove('bg-indigo-600', 'text-white');
-                b.classList.add('text-slate-500');
-            });
-            const activeBtn = document.getElementById(`tab-btn-${tab}`);
-            if(activeBtn) {
-                activeBtn.classList.remove('text-slate-500');
-                activeBtn.classList.add('bg-indigo-600', 'text-white');
-            }
-
-            // Load data for tab
-            if (tab === 'products') this.loadProducts();
-            if (tab === 'categories') this.loadCategories();
-            if (tab === 'orders') this.loadAllOrders();
-            if (tab === 'users') this.loadUsers();
-        },
-
-        async loadUsers() {
-            try {
-                const res = await ApiService.getAllUsers();
-                UI.renderAdminUsers(res.data.data || res.data || []);
-            } catch (err) {
-                console.error('[Admin] Errore loadUsers:', err);
-                UI.showToast("Errore caricamento utenti", "error");
-            }
-        },
-
-        async createUser(e) {
-            e.preventDefault();
-            const data = {
-                firstName: document.getElementById('user-firstName').value,
-                lastName: document.getElementById('user-lastName').value,
-                email: document.getElementById('user-email').value,
-                password: document.getElementById('user-password').value,
-                role: document.getElementById('user-role').value
-            };
-
-            try {
-                await ApiService.register(data);
-                UI.showToast("Utente creato con successo");
-                this.closeUserForm();
-                this.loadUsers();
-            } catch (err) {
-                console.error('[Admin] Errore createUser:', err);
-                UI.showToast(err.message || "Errore nella creazione utente", "error");
-            }
-        },
-
-        openUserForm() {
-            const modal = document.getElementById('user-modal');
-            if (modal) modal.classList.remove('hidden');
-        },
-
-        closeUserForm() {
-            const modal = document.getElementById('user-modal');
-            if (modal) modal.classList.add('hidden');
-        },
-
-        async editProduct(id) {
-            try {
-                const res = await ApiService.getProductById(id);
-                const p = res.data.data;
-                this.openProductForm(id);
-                
-                // Pre-compila i campi
-                document.getElementById('form-name').value = p.name;
-                document.getElementById('form-price').value = p.price;
-                document.getElementById('form-stock').value = p.stockQuantity;
-                document.getElementById('form-specs').value = p.specs || '';
-                
-                // Imposta la categoria (dopo aver caricato le categorie nel form)
-                setTimeout(() => {
-                    document.getElementById('form-category').value = p.categoryId;
-                }, 500);
-            } catch (err) {
-                console.error('[Admin] Errore editProduct:', err);
-                UI.showToast("Errore caricamento dati prodotto", "error");
-            }
-        },
-
-        // ✅ NUOVO: Salva prodotto (create/update)
-        async saveProduct(e) {
-            e.preventDefault();
-            const id = document.getElementById('form-product-id').value;
-            const data = {
-                name: document.getElementById('form-name').value,
-                categoryId: document.getElementById('form-category').value,
-                price: parseFloat(document.getElementById('form-price').value),
-                stockQuantity: parseInt(document.getElementById('form-stock').value),
-                specs: document.getElementById('form-specs').value,
-                isActive: true
-            };
-
-            try {
-                if (id) {
-                    await ApiService.updateProduct(id, data);
-                    UI.showToast("Prodotto aggiornato con successo");
-                } else {
-                    await ApiService.createProduct(data);
-                    UI.showToast("Prodotto creato con successo");
-                }
-                this.closeProductForm();
-                this.loadProducts();
-            } catch (err) {
-                console.error('[Admin] Errore saveProduct:', err);
-                UI.showToast(err.message || "Errore nel salvataggio", "error");
-            }
-        },
-
-        // ✅ NUOVO: Salva categoria
-        async saveCategory(e) {
-            e.preventDefault();
-            const name = document.getElementById('cat-name').value.trim();
-            if (!name) return UI.showToast("Inserisci un nome per la categoria", "error");
-
-            try {
-                await ApiService.createCategory(name);
-                document.getElementById('category-form').reset();
-                UI.showToast("Categoria creata con successo");
-                this.loadCategories();
-            } catch (err) {
-                console.error('[Admin] Errore saveCategory:', err);
-                UI.showToast(err.message || "Errore creazione categoria", "error");
-            }
-        },
-
-        // ✅ NUOVO: Elimina prodotto
-        async deleteProduct(id) {
-            if (!confirm("Sei sicuro di voler eliminare definitivamente questo prodotto?")) return;
-            try {
-                await ApiService.deleteProduct(id);
-                UI.showToast("Prodotto eliminato");
-                this.loadProducts();
-            } catch (err) {
-                console.error('[Admin] Errore deleteProduct:', err);
-                UI.showToast(err.message || "Errore eliminazione", "error");
-            }
-        },
-
-        async deleteCategory(id) {
-            if (!confirm("Eliminare questa categoria?")) return;
-            try {
-                await ApiService.fetch(`/categories/${id}`, { method: 'DELETE' });
-                UI.showToast("Categoria eliminata");
-                this.loadCategories();
-            } catch (err) {
-                console.error('[Admin] Errore deleteCategory:', err);
-                UI.showToast(err.message || "Errore eliminazione", "error");
-            }
-        },
-
-        async updateOrderStatus(id, status) {
-            try {
-                await ApiService.updateOrderStatus(id, status);
-                UI.showToast(`Stato aggiornato: ${status}`);
-                this.loadAllOrders();
-            } catch (err) {
-                console.error('[Admin] Errore updateOrderStatus:', err);
-                UI.showToast("Errore aggiornamento stato", "error");
-            }
-        },
-
-        // ✅ NUOVO: Toggle enabled ordine
-        async toggleOrderEnabled(id, enabled) {
-            try {
-                await ApiService.fetch(`/orders/${id}/enable`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ enabled })
-                });
-                UI.showToast(`Ordine ${enabled ? 'attivato' : 'disattivato'}`);
-                this.loadAllOrders();
-            } catch (err) {
-                console.error('[Admin] Errore toggleOrderEnabled:', err);
-                UI.showToast("Errore aggiornamento", "error");
-            }
-        },
-
-        // ✅ NUOVO: Modifica ordine (placeholder)
-        async editOrder(id) {
-            UI.showToast("Modifica ordine: funzionalità in sviluppo 🔧", "error");
-            // TODO: Implementare modal di editing ordine
-        },
-
-        // ✅ NUOVO: Elimina ordine
-        async deleteOrder(id) {
-            if (!confirm("Sei sicuro di voler eliminare questo ordine?")) return;
-            try {
-                await ApiService.fetch(`/orders/${id}`, { method: 'DELETE' });
-                UI.showToast("Ordine eliminato");
-                this.loadAllOrders();
-            } catch (err) {
-                console.error('[Admin] Errore deleteOrder:', err);
-                UI.showToast(err.message || "Errore eliminazione", "error");
-            }
-        },
-
-        async deleteUser(id) {
-            if (id === App.state.user?.id) return UI.showToast("Non puoi eliminare il tuo account!", "error");
-            if (!confirm("Sei sicuro di eliminare questo utente?")) return;
-            try {
-                await ApiService.deleteUser(id);
-                UI.showToast("Utente eliminato");
-                this.loadUsers();
-            } catch (err) {
-                console.error('[Admin] Errore deleteUser:', err);
-                UI.showToast(err.message || "Errore eliminazione", "error");
-            }
-        },
-
-        openProductForm(productId = null) {
-            const modal = document.getElementById('product-modal');
-            const title = document.getElementById('modal-title');
-            const form = document.getElementById('admin-product-form');
-
-            if (!modal || !title || !form) return;
-
-            title.innerText = productId ? "✏️ Modifica Prodotto" : "➕ Nuovo Prodotto";
-            document.getElementById('form-product-id').value = productId || '';
-
-            // Reset form se nuovo prodotto
-            if (!productId) {
-                form.reset();
-                document.getElementById('form-stock').value = '0';
-                document.getElementById('form-price').value = '0';
+            const isOrderLink = el.getAttribute('onclick')?.includes('view-orders');
+            if (isAdmin && isOrderLink) {
+                el.classList.add('hidden');
             } else {
-                // TODO: Caricare dati prodotto esistente per pre-fill
-                // await this.loadProductForEdit(productId);
+                el.classList.toggle('hidden', !user);
             }
-
-            // Popola select categorie
-            this.populateCategorySelect();
-
-            modal.classList.remove('hidden');
-        },
-
-        // ✅ NUOVO: Popola select categorie nel form prodotto
-        async populateCategorySelect() {
-            const select = document.getElementById('form-category');
-            if (!select) return;
-
-            try {
-                const res = await ApiService.getCategories();
-                const categories = res.data.data || [];
-                select.innerHTML = `<option value="">Seleziona categoria...</option>` +
-                    categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            } catch (err) {
-                console.error('[Admin] Errore populateCategorySelect:', err);
-                select.innerHTML = `<option value="">Errore caricamento</option>`;
-            }
-        },
-
-        closeProductForm() {
-            const modal = document.getElementById('product-modal');
-            if (modal) modal.classList.add('hidden');
-        }
+        });
     },
 
     // ========================================
@@ -657,6 +420,7 @@ const App = {
     dev: {
         fillProductForm() {
             document.getElementById('form-name').value = 'Laptop Pro X' + Math.floor(Math.random()*1000);
+            document.getElementById('form-sku').value = 'LPX-' + Math.random().toString(36).substring(2, 7).toUpperCase();
             document.getElementById('form-price').value = (Math.random()*2000+500).toFixed(2);
             document.getElementById('form-stock').value = Math.floor(Math.random()*50);
             document.getElementById('form-specs').value = 'Intel i7, 16GB RAM, 512GB SSD, RTX 4060';
@@ -665,6 +429,15 @@ const App = {
         fillCategoryForm() {
             document.getElementById('cat-name').value = 'Categoria Test ' + Math.floor(Math.random()*100);
             UI.showToast("Form categoria compilato");
+        },
+        fillUserForm() {
+            const r = Math.floor(Math.random()*1000);
+            document.getElementById('user-firstName').value = 'User' + r;
+            document.getElementById('user-lastName').value = 'Test';
+            document.getElementById('user-email').value = `user${r}@test.com`;
+            document.getElementById('user-password').value = 'Password123!';
+            document.getElementById('user-role').value = Math.random() > 0.8 ? 'ADMIN' : 'CUSTOMER';
+            UI.showToast("Form utente compilato");
         },
         fillAddress() {
             const addresses = [

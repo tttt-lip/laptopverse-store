@@ -243,7 +243,7 @@ const ApiService = {
     },
 
     async getProductById(id) {
-        return this.fetch(`/products/${id}`);
+        return this.fetch(`/products/id/${id}`);
     },
 
     async getProductBySlug(slug) {

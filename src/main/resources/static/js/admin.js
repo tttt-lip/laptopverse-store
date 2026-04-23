@@ -157,6 +157,7 @@ const Admin = {
             document.getElementById('form-price').value = p.price || 0;
             document.getElementById('form-stock').value = p.stockQuantity || 0;
             document.getElementById('form-specs').value = p.specs || '';
+            document.getElementById('form-image').value = p.imageUrl || '';
             
             // Imposta la categoria (dopo aver caricato le categorie nel form)
             setTimeout(() => {
@@ -178,6 +179,7 @@ const Admin = {
             price: parseFloat(document.getElementById('form-price').value),
             stockQuantity: parseInt(document.getElementById('form-stock').value),
             specs: document.getElementById('form-specs').value,
+            imageUrl: document.getElementById('form-image').value,
             isActive: true
         };
 

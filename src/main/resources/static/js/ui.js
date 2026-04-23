@@ -8,18 +8,62 @@ const UI = {
     },
 
     renderProducts(products) {
-        // ... (metodo esistente)
+        const container = document.getElementById('products-grid');
+        if (!container) return;
+
+        if (!products || products.length === 0) {
+            container.innerHTML = `<div class="col-span-full py-20 text-center text-slate-400 font-medium">Nessun prodotto trovato</div>`;
+            return;
+        }
+
+        container.innerHTML = products.map(p => {
+            const isAdmin = App.state.user && App.state.user.role === 'ADMIN';
+            const imageHtml = p.imageUrl 
+                ? `<img src="${p.imageUrl}" alt="${p.name}" class="w-auto h-[70%] object-cover group-hover:scale-110 transition-transform duration-700">`
+                : `<svg class="w-16 h-16 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`;
+
+            return `
+                <div class="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 overflow-hidden flex flex-col h-full">
+                    <div class="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
+                        ${imageHtml}
+                        <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-100 shadow-sm">
+                            <span class="text-[10px] font-bold text-slate-900">${(p.price || 0).toFixed(2)}€</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">${p.categoryName || 'Generic'}</span>
+                            <span id="stock-${p.id}" class="text-[10px] font-bold ${p.stockQuantity > 0 ? 'text-emerald-500' : 'text-rose-500'} uppercase tracking-widest" data-product-stock="${p.id}">Stock: ${p.stockQuantity}</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-lg mb-2 line-clamp-1 group-hover:text-indigo-600 transition-colors">${p.name}</h3>
+                        <p class="text-slate-400 text-xs line-clamp-2 mb-6 flex-1">${p.specs || 'Performance workstation for digital nomads'}</p>
+                        
+                        <div class="flex gap-3">
+                            <button onclick="App.showProductDetail('${p.slug}')" class="flex-1 bg-slate-50 text-slate-900 font-bold py-3.5 rounded-xl text-[11px] hover:bg-slate-100 transition uppercase tracking-wider">Dettagli</button>
+                            ${!isAdmin ? `
+                            <button onclick="App.addToCart('${p.id}', 1)" class="bg-slate-900 text-white p-3.5 rounded-xl hover:bg-indigo-600 transition shadow-lg disabled:bg-slate-100 disabled:text-slate-400" ${p.stockQuantity <= 0 ? 'disabled' : ''}>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     },
 
     renderCategories(categories, activeCategoryId = null) {
         const container = document.getElementById('category-filters');
         if (!container) return;
 
-        const allActive = !activeCategoryId ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100';
+        // Verifica se "Tutti" deve essere attivo (quando activeCategoryId è null o undefined)
+        const isAllActive = !activeCategoryId;
+        const allActiveStyles = isAllActive 
+            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100 border-indigo-600' 
+            : 'bg-white text-slate-500 hover:bg-slate-50 border-slate-100';
         
         let html = `
             <button onclick="App.filterByCategory(null)" 
-                class="px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${allActive}">
+                class="px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${allActiveStyles}">
                 Tutti
             </button>
         `;
@@ -45,10 +89,14 @@ const UI = {
         const container = document.getElementById('product-detail-content');
         const isAdmin = App.state.user && App.state.user.role === 'ADMIN';
 
+        const imageHtml = p.imageUrl 
+            ? `<img src="${p.imageUrl}" alt="${p.name}" class="w-full h-full object-cover">`
+            : `<svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>`;
+
         container.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
                 <div class="bg-white rounded-[2.5rem] aspect-square flex items-center justify-center text-slate-100 border border-slate-100 shadow-sm overflow-hidden relative">
-                    <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    ${imageHtml}
                     <div class="absolute top-6 right-6 ${p.stockQuantity < 5 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} text-xs font-bold px-4 py-1.5 rounded-xl border border-current opacity-90">
                         Disponibilità: ${p.stockQuantity} pezzi
                     </div>

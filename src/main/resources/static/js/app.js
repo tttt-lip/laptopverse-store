@@ -12,13 +12,45 @@ const App = {
     async init() {
         this.setupListeners();
         this.updateQuickFillDropdown();
-        await this.loadCategories();
-        await this.loadProducts();
-        if (this.state.user || this.state.guestCartId) await this.syncCart();
-        this.updateGlobalUI();
-        
-        if (this.state.user && this.state.user.role === 'ADMIN') {
-            Admin.loadProducts();
+
+        // 1️⃣ VALIDAZIONE JWT - Deve essere la prima cosa assoluta
+        if (this.state.user) {
+            try {
+                console.log("[App] Validazione JWT in corso...");
+                const res = await ApiService.getCurrentUser();
+
+                // Token valido: aggiorniamo lo stato con i dati freschi del server
+                this.state.user = { ...this.state.user, ...res.data.data };
+                localStorage.setItem('user', JSON.stringify(this.state.user));
+                console.log("[App] Sessione validata per:", this.state.user.email);
+            } catch (err) {
+                console.error("[App] JWT non valido o scaduto:", err.message);
+                // Il logout pulisce tutto e ricarica la pagina
+                this.logout();
+                return; // STOP: Non procedere con altre chiamate
+            }
+        }
+
+        // 2️⃣ CARICAMENTO DATI PUBBLICI - Solo dopo la validazione (o se guest)
+        try {
+            // Eseguiamo in parallelo per velocità, ma solo ora che sappiamo chi è l'utente
+            await Promise.all([
+                this.loadCategories(),
+                this.loadProducts()
+            ]);
+            
+            // 3️⃣ SINCRONIZZAZIONE CARRELLO
+            if (this.state.user || this.state.guestCartId) {
+                await this.syncCart();
+            }
+            
+            this.updateGlobalUI();
+            
+            if (this.state.user && this.state.user.role === 'ADMIN') {
+                Admin.loadProducts();
+            }
+        } catch (err) {
+            console.error("[App] Errore durante l'inizializzazione dei dati:", err);
         }
     },
 
@@ -456,13 +488,27 @@ const App = {
             }[role];
             if (!credentials) return;
 
-            document.getElementById('login-email').value = credentials.e;
-            document.getElementById('login-password').value = credentials.p;
+            const emailInput = document.getElementById('login-email');
+            const passInput = document.getElementById('login-password');
+            
+            if (emailInput) emailInput.value = credentials.e;
+            if (passInput) passInput.value = credentials.p;
 
-            // Simula submit
-            const event = new Event('submit', { cancelable: true });
-            document.getElementById('login-form')?.dispatchEvent(event);
-            UI.showToast(`Quick login come ${role}...`);
+            UI.showToast(`Campi login compilati per ${role}`);
+        },
+        fillRegisterForm() {
+            const r = Math.floor(Math.random() * 1000);
+            const firstName = document.getElementById('reg-firstName');
+            const lastName = document.getElementById('reg-lastName');
+            const email = document.getElementById('reg-email');
+            const password = document.getElementById('reg-password');
+
+            if (firstName) firstName.value = 'User' + r;
+            if (lastName) lastName.value = 'Test';
+            if (email) email.value = `user${r}@test.com`;
+            if (password) password.value = 'Password123!';
+
+            UI.showToast("Form registrazione compilato");
         }
     }
 };

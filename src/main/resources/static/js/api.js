@@ -242,6 +242,11 @@ const ApiService = {
         return this.fetch(`/products${query ? `?${query}` : ''}`);
     },
 
+    async getProductsAllAdmin(params = {}) {
+        const query = new URLSearchParams(params).toString();
+        return this.fetch(`/products/all${query ? `?${query}` : ''}`);
+    },
+
     async getProductById(id) {
         return this.fetch(`/products/id/${id}`);
     },

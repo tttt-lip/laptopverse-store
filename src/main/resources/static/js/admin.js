@@ -33,7 +33,7 @@ const Admin = {
 
     async loadProducts() {
         try {
-            const res = await ApiService.getProducts();
+            const res = await ApiService.getProductsAllAdmin();
             const products = res.data.data.content || res.data.data || [];
             UI.renderAdminProducts(products);
         } catch (err) {
@@ -85,18 +85,24 @@ const Admin = {
 
         const password = document.getElementById('user-password').value;
         if (password) data.password = password;
+        
+        // Gestione isEnabled (Checkbox)
+        data.isEnabled = document.getElementById('user-active').checked;
 
         try {
             if (id) {
-                // Endpoint ipotetico per update utente da admin
-                await ApiService.fetch(`/users/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(data)
-                });
+                // Endpoint per update utente da admin
+                await ApiService.updateUser(id, data);
                 UI.showToast("Utente aggiornato con successo");
             } else {
                 if (!password) return UI.showToast("La password è obbligatoria per i nuovi utenti", "error");
                 await ApiService.register(data);
+                
+                // Salva l'account per il quick login (se disponibile globalmente)
+                if (window.App && typeof window.App.saveAccount === 'function') {
+                    window.App.saveAccount(data.email, password);
+                }
+                
                 UI.showToast("Utente creato con successo");
             }
             this.closeUserForm();
@@ -110,9 +116,15 @@ const Admin = {
     openUserForm(userId = null) {
         const modal = document.getElementById('user-modal');
         const title = modal?.querySelector('h2');
+        const submitBtn = document.getElementById('user-submit-btn');
+
         if (modal) {
             if (title) title.innerText = userId ? "✏️ Modifica Utente" : "➕ Crea Nuovo Utente";
+            if (submitBtn) submitBtn.innerText = userId ? "Salva Modifiche" : "Crea Utente";
+            
             document.getElementById('form-user-id').value = userId || '';
+            // Reset check abilitazione a true per nuovi utenti
+            if (!userId) document.getElementById('user-active').checked = true;
             modal.classList.remove('hidden');
         }
     },
@@ -136,6 +148,8 @@ const Admin = {
             document.getElementById('user-lastName').value = u.lastName || '';
             document.getElementById('user-email').value = u.email || '';
             document.getElementById('user-role').value = u.role || 'CUSTOMER';
+            document.getElementById('user-active').checked = u.isEnabled !== false;
+
             // Password non viene pre-compilata per sicurezza
             document.getElementById('user-password').value = '';
             document.getElementById('user-password').placeholder = "Lascia vuoto per non cambiare";
@@ -158,6 +172,7 @@ const Admin = {
             document.getElementById('form-stock').value = p.stockQuantity || 0;
             document.getElementById('form-specs').value = p.specs || '';
             document.getElementById('form-image').value = p.imageUrl || '';
+            document.getElementById('form-active').checked = p.isActive !== false;
             
             // Imposta la categoria (dopo aver caricato le categorie nel form)
             setTimeout(() => {
@@ -180,7 +195,7 @@ const Admin = {
             stockQuantity: parseInt(document.getElementById('form-stock').value),
             specs: document.getElementById('form-specs').value,
             imageUrl: document.getElementById('form-image').value,
-            isActive: true
+            isActive: document.getElementById('form-active').checked
         };
 
         try {

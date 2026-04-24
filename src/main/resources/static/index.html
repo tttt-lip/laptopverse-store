@@ -18,7 +18,7 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen selection:bg-indigo-100">
 
-    <div id="toast-container" class="fixed top-6 right-6 z-[100] flex flex-col gap-3"></div>
+    <div id="toast-container" class="fixed bottom-6 left-6 z-[100] flex flex-col-reverse gap-3"></div>
 
     <!-- Navigation -->
     <header class="h-20 sticky top-0 z-40 flex items-center bg-white/80 backdrop-blur-md border-b border-slate-200">
@@ -316,6 +316,10 @@
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Quantità Stock</label>
                             <input type="number" id="form-stock" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
                         </div>
+                        <div class="col-span-1 flex items-center gap-4">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stato Attivo</label>
+                            <input type="checkbox" id="form-active" class="w-6 h-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500" checked>
+                        </div>
                         <div class="col-span-2">
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">URL Immagine</label>
                             <input type="text" id="form-image" placeholder="https://example.com/image.jpg" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -345,19 +349,38 @@
                     <input type="hidden" id="form-user-id">
                     <div class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <input type="text" id="user-firstName" placeholder="Nome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                            <input type="text" id="user-lastName" placeholder="Cognome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Nome</label>
+                                <input type="text" id="user-firstName" placeholder="Nome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Cognome</label>
+                                <input type="text" id="user-lastName" placeholder="Cognome" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                            </div>
                         </div>
-                        <input type="email" id="user-email" placeholder="Email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                        <input type="password" id="user-password" placeholder="Password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                        <select id="user-role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                            <option value="CUSTOMER">CUSTOMER (Utente)</option>
-                            <option value="ADMIN">ADMIN (Amministratore)</option>
-                        </select>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Email</label>
+                            <input type="email" id="user-email" placeholder="Email" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Password</label>
+                            <input type="password" id="user-password" placeholder="Password" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-widest">Ruolo</label>
+                            <select id="user-role" class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" required>
+                                <option value="CUSTOMER">CUSTOMER (Utente)</option>
+                                <option value="ADMIN">ADMIN (Amministratore)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Utente Abilitato</label>
+                            <input type="checkbox" id="user-active" class="w-6 h-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500" checked>
+                        </div>
                     </div>
                     <div class="pt-6 flex justify-end gap-4">
                         <button type="button" onclick="Admin.closeUserForm()" class="px-8 py-4 text-xs font-bold text-slate-400 hover:text-slate-600 transition">Annulla</button>
-                        <button type="submit" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Crea Utente</button>
+                        <button type="submit" id="user-submit-btn" class="bg-indigo-600 text-white font-bold px-10 py-4 rounded-2xl text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Crea Utente</button>
                     </div>
                 </form>
             </div>

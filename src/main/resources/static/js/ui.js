@@ -246,8 +246,8 @@ const UI = {
                 <td class="px-8 py-5 text-center">${p.sku || '-'}</td>
                 <td class="px-8 py-5 text-center">${p.stockQuantity || 0}</td>
                 <td class="px-8 py-5 text-center">
-                    <span class="px-2 py-1 rounded ${p.isActive !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'} font-bold text-[9px] uppercase">
-                        ${p.isActive !== false ? 'Attivo' : 'Inattivo'}
+                    <span class="px-2 py-1 rounded ${p.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} font-bold text-[9px] uppercase">
+                        ${p.isActive ? 'Attivo' : 'Inattivo'}
                     </span>
                 </td>
                 <td class="px-8 py-5 text-right font-bold text-slate-900">${(parseFloat(p.price) || 0).toFixed(2)}€</td>
@@ -301,8 +301,8 @@ const UI = {
                 <td class="px-8 py-5">${u.email || ''}</td>
                 <td class="px-8 py-5"><span class="px-3 py-1 rounded-lg ${u.role === 'ADMIN' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-600'} font-bold text-[10px] uppercase">${u.role || 'N/A'}</span></td>
                 <td class="px-8 py-5 text-center">
-                    <span class="px-2 py-1 rounded ${u.enabled ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} font-bold text-[9px] uppercase">
-                        ${u.enabled ? 'Attivo' : 'Disabilitato'}
+                    <span class="px-2 py-1 rounded ${u.isEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} font-bold text-[9px] uppercase">
+                        ${u.isEnabled ? 'Attivo' : 'Disabilitato'}
                     </span>
                 </td>
                 <td class="px-8 py-5 text-center">
@@ -329,7 +329,7 @@ const UI = {
         if (!container) return;
         const toast = document.createElement('div');
         const styles = type === 'success' ? 'bg-slate-900 text-white' : 'bg-white text-rose-600 border border-rose-100';
-        toast.className = `${styles} px-8 py-4 rounded-2xl shadow-xl font-bold text-xs transform transition-all duration-500 translate-y-4 opacity-0 border border-slate-800`;
+        toast.className = `${styles} px-5 py-3 rounded-xl shadow-lg font-bold text-[11px] transform transition-all duration-500 translate-y-4 opacity-0 border border-slate-800`;
         toast.innerText = message;
         container.appendChild(toast);
         setTimeout(() => toast.classList.remove('translate-y-4', 'opacity-0'), 10);

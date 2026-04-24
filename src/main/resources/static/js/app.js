@@ -255,6 +255,9 @@ const App = {
             this.state.user = response.data || response;
             localStorage.setItem('user', JSON.stringify(this.state.user));
 
+            // Salva account per quick login futuro
+            this.saveAccount(email, pass);
+
             await this.syncCart();
             UI.showView('view-products');
             this.updateGlobalUI();
@@ -277,9 +280,14 @@ const App = {
 
         try {
             const res = await ApiService.register(data);
+            
+            // Salva l'account appena registrato per il login rapido
+            this.saveAccount(data.email, data.password);
+            
             UI.showToast("Registrazione completata! Ora puoi accedere.");
             toggleAuth('login');
             document.getElementById('login-email').value = data.email;
+            document.getElementById('login-password').value = data.password;
         } catch (err) {
             console.error('[App] Registrazione fallita:', err);
             UI.showToast(err.message || "Registrazione fallita", "error");
@@ -309,8 +317,7 @@ const App = {
         const data = {
             firstName: document.getElementById('profile-firstName').value,
             lastName: document.getElementById('profile-lastName').value,
-            email: document.getElementById('profile-email').value,
-            role: document.getElementById('profile-role-badge').innerText
+            email: document.getElementById('profile-email').value
         };
 
         try {
@@ -374,7 +381,10 @@ const App = {
 
     logout() {
         ApiService.logout().finally(() => {
-            localStorage.clear();
+            // ✅ FIX: Non usiamo clear() altrimenti perdiamo i profili salvati
+            localStorage.removeItem('user');
+            localStorage.removeItem('guestCartId');
+            
             this.state.user = null;
             this.state.guestCartId = null;
             this.state.cart = null;
